@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { generateId } from "@/src/lib/codes";
-import { savePhoto } from "@/src/lib/storage";
+import { savePhoto, deletePhotoFile } from "@/src/lib/storage";
 import { insertPhoto } from "@/src/db/photos";
 
 export async function POST(request: NextRequest) {
@@ -37,21 +37,28 @@ export async function POST(request: NextRequest) {
       const blurData = `data:image/jpeg;base64,${blurBuffer.toString("base64")}`;
 
       const id = generateId();
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-      const filename = `${id}.${ext}`;
+      const ext = (file.name.split(".").pop()?.toLowerCase() ?? "jpg").replace(
+        /[^a-z0-9]/g,
+        "",
+      );
+      const filename = `${id}.${ext || "jpg"}`;
 
       await savePhoto(filename, buffer);
-
-      await insertPhoto({
-        id,
-        filename,
-        original_name: file.name,
-        width,
-        height,
-        aspect_ratio: aspectRatio,
-        blur_data: blurData,
-        file_size: buffer.length,
-      });
+      try {
+        await insertPhoto({
+          id,
+          filename,
+          original_name: file.name,
+          width,
+          height,
+          aspect_ratio: aspectRatio,
+          blur_data: blurData,
+          file_size: buffer.length,
+        });
+      } catch (e) {
+        await deletePhotoFile(filename);
+        throw e;
+      }
 
       uploaded.push({ id, filename });
     }

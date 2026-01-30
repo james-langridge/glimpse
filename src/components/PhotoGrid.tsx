@@ -35,9 +35,25 @@ export default function PhotoGrid({ photos, onDelete }: PhotoGridProps) {
     setDeleting(id);
     try {
       const res = await fetch(`/api/photos/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        onDelete(id);
+
+      if (res.status === 409) {
+        const data = await res.json();
+        const codes = data.activeLinks
+          .map((l: { code: string }) => l.code)
+          .join(", ");
+        const proceed = confirm(
+          `This photo is in ${data.activeLinks.length} active share link(s): ${codes}. Delete anyway?`,
+        );
+        if (!proceed) return;
+
+        const forceRes = await fetch(`/api/photos/${id}?force=1`, {
+          method: "DELETE",
+        });
+        if (forceRes.ok) onDelete(id);
+        return;
       }
+
+      if (res.ok) onDelete(id);
     } finally {
       setDeleting(null);
     }

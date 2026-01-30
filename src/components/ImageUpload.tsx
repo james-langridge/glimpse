@@ -60,8 +60,9 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
 
         if (needsResize) {
           const blob = await processFile(file);
-          const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-          const name = file.name.replace(`.${ext}`, ".jpg");
+          const dotIdx = file.name.lastIndexOf(".");
+          const name =
+            (dotIdx > 0 ? file.name.slice(0, dotIdx) : file.name) + ".jpg";
           formData.append("photos", new File([blob], name, { type: "image/jpeg" }));
         } else {
           formData.append("photos", file);

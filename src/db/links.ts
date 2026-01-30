@@ -149,6 +149,17 @@ export async function getLinkCounts() {
   return counts;
 }
 
+export async function getActiveLinksForPhoto(photoId: string) {
+  const result = await sql<ShareLink>`
+    SELECT sl.* FROM share_links sl
+    JOIN share_link_photos slp ON slp.share_link_id = sl.id
+    WHERE slp.photo_id = ${photoId}
+    AND sl.revoked = FALSE
+    AND sl.expires_at > NOW()
+  `;
+  return result.rows;
+}
+
 export async function isCodeUnique(code: string) {
   const result = await sql<{ count: string }>`
     SELECT COUNT(*) as count FROM share_links WHERE code = ${code}

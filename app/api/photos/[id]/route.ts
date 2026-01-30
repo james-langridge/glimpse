@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPhotoById, deletePhoto } from "@/src/db/photos";
+import { getActiveLinksForPhoto } from "@/src/db/links";
 import { deletePhotoFile } from "@/src/lib/storage";
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -12,6 +13,19 @@ export async function DELETE(
 
     if (!photo) {
       return NextResponse.json({ error: "Photo not found" }, { status: 404 });
+    }
+
+    const activeLinks = await getActiveLinksForPhoto(id);
+    const force = request.nextUrl.searchParams.get("force") === "1";
+
+    if (activeLinks.length > 0 && !force) {
+      return NextResponse.json(
+        {
+          warning: "Photo is in active share links",
+          activeLinks: activeLinks.map((l) => ({ id: l.id, code: l.code })),
+        },
+        { status: 409 },
+      );
     }
 
     await deletePhotoFile(photo.filename);
