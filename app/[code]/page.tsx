@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { getLinkByCode, getLinkStatus } from "@/src/db/links";
@@ -13,6 +14,48 @@ interface Props {
 
 // Guard against matching admin/login routes
 const RESERVED_PATHS = new Set(["admin", "login", "api", "_next"]);
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { code } = await params;
+  const upperCode = code.toUpperCase();
+
+  if (RESERVED_PATHS.has(code.toLowerCase())) return {};
+
+  const link = await getLinkByCode(upperCode);
+  if (!link || getLinkStatus(link) !== "active") return {};
+
+  const photos = await getPhotosForCode(upperCode);
+  if (photos.length === 0) return {};
+
+  const siteUrl = process.env.SITE_URL || "";
+  const firstPhoto = photos[0];
+  const imageUrl = `${siteUrl}/api/shared-image/${upperCode}/${firstPhoto.filename}`;
+  const photoCount = photos.length;
+  const description =
+    photoCount === 1 ? "Someone shared a photo with you" : `Someone shared ${photoCount} photos with you`;
+
+  return {
+    title: "Glimpse",
+    description,
+    openGraph: {
+      title: "Glimpse",
+      description,
+      images: [
+        {
+          url: imageUrl,
+          ...(firstPhoto.width && { width: firstPhoto.width }),
+          ...(firstPhoto.height && { height: firstPhoto.height }),
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Glimpse",
+      description,
+      images: [imageUrl],
+    },
+  };
+}
 
 async function recordView(linkId: string): Promise<number | null> {
   if (process.env.NODE_ENV === "development") return null;
