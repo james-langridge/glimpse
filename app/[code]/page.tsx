@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { getLinkByCode, getLinkStatus } from "@/src/db/links";
 import { getPhotosForCode } from "@/src/db/links";
+import { insertView } from "@/src/db/analytics";
+import { hashIP, parseGeo, parseUserAgent } from "@/src/lib/analytics";
 import ShareGallery from "@/src/components/ShareGallery";
+import DurationTracker from "@/src/components/DurationTracker";
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -9,6 +13,37 @@ interface Props {
 
 // Guard against matching admin/login routes
 const RESERVED_PATHS = new Set(["admin", "login", "api", "_next"]);
+
+async function recordView(linkId: string): Promise<number | null> {
+  if (process.env.NODE_ENV === "development") return null;
+
+  try {
+    const headersList = await headers();
+    const forwarded = headersList.get("x-forwarded-for");
+    const ip = forwarded ? forwarded.split(",")[0].trim() : null;
+    const userAgent = headersList.get("user-agent") || "";
+    const referrer = headersList.get("referer") || null;
+
+    const ipHash = ip ? hashIP(ip) : null;
+    const geo = ip ? parseGeo(ip) : { country: null, city: null };
+    const ua = parseUserAgent(userAgent);
+
+    return await insertView({
+      share_link_id: linkId,
+      ip_hash: ipHash,
+      country: geo.country,
+      city: geo.city,
+      user_agent: userAgent || null,
+      device_type: ua.device_type,
+      browser: ua.browser,
+      os: ua.os,
+      referrer,
+    });
+  } catch (err) {
+    console.error("Failed to record view:", err);
+    return null;
+  }
+}
 
 export default async function SharePage({ params }: Props) {
   const { code } = await params;
@@ -49,7 +84,10 @@ export default async function SharePage({ params }: Props) {
     );
   }
 
-  const photos = await getPhotosForCode(upperCode);
+  const [photos, viewId] = await Promise.all([
+    getPhotosForCode(upperCode),
+    recordView(link.id),
+  ]);
 
   if (photos.length === 0) {
     return (
@@ -67,6 +105,7 @@ export default async function SharePage({ params }: Props) {
   return (
     <div className="min-h-screen bg-zinc-950">
       <ShareGallery photos={photos} code={upperCode} />
+      {viewId !== null && <DurationTracker viewId={viewId} />}
     </div>
   );
 }
