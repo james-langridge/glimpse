@@ -1,11 +1,21 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { runCleanup } from "@/src/lib/cleanup";
+
+function verifyBearerToken(header: string | null, expected: string): boolean {
+  const token = header?.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!token || !expected) return false;
+  const a = Buffer.from(token);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
 
 export async function POST(request: NextRequest) {
   const auth = request.headers.get("authorization");
   const expected = process.env.CLEANUP_SECRET;
 
-  if (!expected || auth !== `Bearer ${expected}`) {
+  if (!expected || !verifyBearerToken(auth, expected)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

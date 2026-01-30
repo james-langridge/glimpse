@@ -42,7 +42,6 @@ export async function GET(
         "Content-Length": String(data.length),
         "Cache-Control": "private, max-age=3600, must-revalidate",
         "Content-Disposition": "inline",
-        "X-Frame-Options": "DENY",
       },
     });
   } catch (e) {
