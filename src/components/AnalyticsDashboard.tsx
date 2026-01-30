@@ -1,0 +1,514 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+} from "recharts";
+
+interface OverviewStats {
+  total_views: number;
+  unique_visitors: number;
+  avg_duration_ms: number;
+}
+
+interface ViewOverTime {
+  date: string;
+  views: number;
+}
+
+interface DeviceBreakdown {
+  device_type: string;
+  count: number;
+}
+
+interface BrowserBreakdown {
+  browser: string;
+  count: number;
+}
+
+interface GeoBreakdown {
+  country: string;
+  city: string;
+  count: number;
+}
+
+interface PerLinkStat {
+  share_link_id: string;
+  code: string;
+  revoked: boolean;
+  expires_at: string;
+  views: number;
+  unique_visitors: number;
+}
+
+interface RecentView {
+  id: number;
+  code: string;
+  viewed_at: string;
+  country: string | null;
+  city: string | null;
+  device_type: string | null;
+  browser: string | null;
+  os: string | null;
+  session_duration_ms: number | null;
+}
+
+interface AnalyticsData {
+  overview: OverviewStats;
+  viewsOverTime: ViewOverTime[];
+  devices: DeviceBreakdown[];
+  browsers: BrowserBreakdown[];
+  geo: GeoBreakdown[];
+  perLink: PerLinkStat[];
+  recent: RecentView[];
+}
+
+const PIE_COLORS = ["#a78bfa", "#818cf8", "#6366f1", "#4f46e5", "#4338ca"];
+
+const DAY_OPTIONS = [
+  { value: 7, label: "7 days" },
+  { value: 30, label: "30 days" },
+  { value: 90, label: "90 days" },
+];
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return "< 1s";
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remaining = seconds % 60;
+  return `${minutes}m ${remaining}s`;
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getLinkStatus(link: PerLinkStat): string {
+  if (link.revoked) return "revoked";
+  if (new Date(link.expires_at) < new Date()) return "expired";
+  return "active";
+}
+
+const statusColors: Record<string, string> = {
+  active: "bg-emerald-500/20 text-emerald-400",
+  expired: "bg-zinc-500/20 text-zinc-400",
+  revoked: "bg-red-500/20 text-red-400",
+};
+
+export default function AnalyticsDashboard() {
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [days, setDays] = useState(30);
+  const [linkId, setLinkId] = useState<string>("");
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ days: String(days) });
+      if (linkId) params.set("linkId", linkId);
+      const res = await fetch(`/api/analytics?${params}`);
+      if (res.ok) {
+        setData(await res.json());
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [days, linkId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (loading && !data) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <p className="text-zinc-500">Loading analytics...</p>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  return (
+    <div className="space-y-8">
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex gap-1 rounded-lg bg-zinc-900 p-1">
+          {DAY_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setDays(opt.value)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                days === opt.value
+                  ? "bg-zinc-800 text-white"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <select
+          value={linkId}
+          onChange={(e) => setLinkId(e.target.value)}
+          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200"
+        >
+          <option value="">All links</option>
+          {data.perLink.map((link) => (
+            <option key={link.share_link_id} value={link.share_link_id}>
+              {link.code} ({getLinkStatus(link)})
+            </option>
+          ))}
+        </select>
+        {loading && (
+          <span className="text-xs text-zinc-500">Updating...</span>
+        )}
+      </div>
+
+      {/* Overview Stats */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="rounded-lg bg-zinc-900 p-4">
+          <div className="text-xs text-zinc-400">Total Views</div>
+          <div className="mt-1 text-2xl font-light text-white">
+            {data.overview.total_views.toLocaleString()}
+          </div>
+        </div>
+        <div className="rounded-lg bg-zinc-900 p-4">
+          <div className="text-xs text-zinc-400">Unique Visitors</div>
+          <div className="mt-1 text-2xl font-light text-white">
+            {data.overview.unique_visitors.toLocaleString()}
+          </div>
+        </div>
+        <div className="rounded-lg bg-zinc-900 p-4">
+          <div className="text-xs text-zinc-400">Avg. Duration</div>
+          <div className="mt-1 text-2xl font-light text-white">
+            {formatDuration(data.overview.avg_duration_ms)}
+          </div>
+        </div>
+      </div>
+
+      {/* Views Over Time */}
+      <div className="rounded-lg bg-zinc-900 p-4">
+        <h3 className="mb-4 text-sm font-medium text-zinc-300">
+          Views Over Time
+        </h3>
+        {data.viewsOverTime.length > 0 ? (
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={data.viewsOverTime}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+              <XAxis
+                dataKey="date"
+                tickFormatter={formatDate}
+                tick={{ fill: "#71717a", fontSize: 12 }}
+                stroke="#3f3f46"
+              />
+              <YAxis
+                tick={{ fill: "#71717a", fontSize: 12 }}
+                stroke="#3f3f46"
+                allowDecimals={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#18181b",
+                  border: "1px solid #3f3f46",
+                  borderRadius: "8px",
+                  color: "#e4e4e7",
+                  fontSize: 13,
+                }}
+                labelFormatter={(label) =>
+                  new Date(String(label)).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })
+                }
+              />
+              <Line
+                type="monotone"
+                dataKey="views"
+                stroke="#a78bfa"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: "#a78bfa" }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <p className="py-8 text-center text-sm text-zinc-500">
+            No views in this period
+          </p>
+        )}
+      </div>
+
+      {/* Device & Browser Charts */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Device Breakdown */}
+        <div className="rounded-lg bg-zinc-900 p-4">
+          <h3 className="mb-4 text-sm font-medium text-zinc-300">Devices</h3>
+          {data.devices.length > 0 ? (
+            <div className="flex items-center gap-6">
+              <div className="h-48 w-48 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={data.devices}
+                      dataKey="count"
+                      nameKey="device_type"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      innerRadius={40}
+                    >
+                      {data.devices.map((_, i) => (
+                        <Cell
+                          key={i}
+                          fill={PIE_COLORS[i % PIE_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#18181b",
+                        border: "1px solid #3f3f46",
+                        borderRadius: "8px",
+                        color: "#e4e4e7",
+                        fontSize: 13,
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2">
+                {data.devices.map((d, i) => (
+                  <div key={d.device_type} className="flex items-center gap-2">
+                    <div
+                      className="h-3 w-3 rounded-full"
+                      style={{
+                        backgroundColor: PIE_COLORS[i % PIE_COLORS.length],
+                      }}
+                    />
+                    <span className="text-sm capitalize text-zinc-300">
+                      {d.device_type}
+                    </span>
+                    <span className="text-sm text-zinc-500">{d.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-zinc-500">No data</p>
+          )}
+        </div>
+
+        {/* Browser Breakdown */}
+        <div className="rounded-lg bg-zinc-900 p-4">
+          <h3 className="mb-4 text-sm font-medium text-zinc-300">Browsers</h3>
+          {data.browsers.length > 0 ? (
+            <ResponsiveContainer width="100%" height={192}>
+              <BarChart data={data.browsers.slice(0, 6)} layout="vertical">
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#27272a"
+                  horizontal={false}
+                />
+                <XAxis
+                  type="number"
+                  tick={{ fill: "#71717a", fontSize: 12 }}
+                  stroke="#3f3f46"
+                  allowDecimals={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="browser"
+                  width={80}
+                  tick={{ fill: "#a1a1aa", fontSize: 12 }}
+                  stroke="#3f3f46"
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#18181b",
+                    border: "1px solid #3f3f46",
+                    borderRadius: "8px",
+                    color: "#e4e4e7",
+                    fontSize: 13,
+                  }}
+                />
+                <Bar dataKey="count" fill="#818cf8" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="py-8 text-center text-sm text-zinc-500">No data</p>
+          )}
+        </div>
+      </div>
+
+      {/* Geographic Breakdown */}
+      <div className="rounded-lg bg-zinc-900 p-4">
+        <h3 className="mb-4 text-sm font-medium text-zinc-300">
+          Geographic Breakdown
+        </h3>
+        {data.geo.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800 text-left text-zinc-400">
+                  <th className="pb-2 font-medium">Country</th>
+                  <th className="pb-2 font-medium">City</th>
+                  <th className="pb-2 text-right font-medium">Views</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.geo.slice(0, 20).map((row, i) => (
+                  <tr key={i} className="border-b border-zinc-800/50">
+                    <td className="py-2 text-zinc-200">{row.country}</td>
+                    <td className="py-2 text-zinc-400">{row.city}</td>
+                    <td className="py-2 text-right text-zinc-300">
+                      {row.count}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-zinc-500">No data</p>
+        )}
+      </div>
+
+      {/* Per-Link Stats */}
+      <div className="rounded-lg bg-zinc-900 p-4">
+        <h3 className="mb-4 text-sm font-medium text-zinc-300">
+          Per-Link Stats
+        </h3>
+        {data.perLink.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800 text-left text-zinc-400">
+                  <th className="pb-2 font-medium">Code</th>
+                  <th className="pb-2 font-medium">Status</th>
+                  <th className="pb-2 text-right font-medium">Views</th>
+                  <th className="pb-2 text-right font-medium">Unique</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.perLink.map((link) => {
+                  const status = getLinkStatus(link);
+                  return (
+                    <tr
+                      key={link.share_link_id}
+                      className="border-b border-zinc-800/50"
+                    >
+                      <td className="py-2 font-mono text-zinc-200">
+                        {link.code}
+                      </td>
+                      <td className="py-2">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status]}`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td className="py-2 text-right text-zinc-300">
+                        {link.views}
+                      </td>
+                      <td className="py-2 text-right text-zinc-300">
+                        {link.unique_visitors}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-zinc-500">
+            No links yet
+          </p>
+        )}
+      </div>
+
+      {/* Recent Views */}
+      <div className="rounded-lg bg-zinc-900 p-4">
+        <h3 className="mb-4 text-sm font-medium text-zinc-300">
+          Recent Views
+        </h3>
+        {data.recent.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800 text-left text-zinc-400">
+                  <th className="pb-2 font-medium">Time</th>
+                  <th className="pb-2 font-medium">Code</th>
+                  <th className="pb-2 font-medium">Location</th>
+                  <th className="pb-2 font-medium">Device</th>
+                  <th className="pb-2 font-medium">Browser</th>
+                  <th className="pb-2 text-right font-medium">Duration</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recent.map((view) => (
+                  <tr
+                    key={view.id}
+                    className="border-b border-zinc-800/50"
+                  >
+                    <td className="py-2 text-zinc-400">
+                      {formatDateTime(view.viewed_at)}
+                    </td>
+                    <td className="py-2 font-mono text-zinc-200">
+                      {view.code}
+                    </td>
+                    <td className="py-2 text-zinc-300">
+                      {[view.city, view.country].filter(Boolean).join(", ") ||
+                        "-"}
+                    </td>
+                    <td className="py-2 capitalize text-zinc-300">
+                      {view.device_type ?? "-"}
+                    </td>
+                    <td className="py-2 text-zinc-300">
+                      {[view.browser, view.os].filter(Boolean).join(" / ") ||
+                        "-"}
+                    </td>
+                    <td className="py-2 text-right text-zinc-400">
+                      {view.session_duration_ms
+                        ? formatDuration(view.session_duration_ms)
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-zinc-500">
+            No views yet
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

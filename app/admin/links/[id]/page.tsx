@@ -113,7 +113,7 @@ export default function LinkDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-zinc-500">Loading...</p>
       </div>
     );
@@ -121,7 +121,7 @@ export default function LinkDetailPage() {
 
   if (!link) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-zinc-400">Link not found</p>
       </div>
     );
@@ -130,7 +130,7 @@ export default function LinkDetailPage() {
   const shareUrl = `${window.location.origin}/${link.code}`;
 
   return (
-    <div className="min-h-screen bg-zinc-950 px-6 py-8">
+    <div className="px-6 py-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <button

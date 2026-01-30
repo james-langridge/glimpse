@@ -53,7 +53,7 @@ export default function LinksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 px-6 py-8">
+    <div className="px-6 py-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex items-center justify-between">
           <div>
