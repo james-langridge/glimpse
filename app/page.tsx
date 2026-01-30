@@ -1,3 +1,5 @@
+import CodeEntry from "@/src/components/CodeEntry";
+
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-950">
@@ -6,6 +8,7 @@ export default function Home() {
           GLIMPSE
         </h1>
         <p className="text-zinc-400">Enter your code to view photos</p>
+        <CodeEntry />
       </main>
     </div>
   );
