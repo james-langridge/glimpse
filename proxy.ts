@@ -25,6 +25,7 @@ export const config = {
     "/admin/:path*",
     "/api/photos",
     "/api/photos/:path*",
+    "/api/links",
     "/api/links/:path*",
     "/api/cleanup",
   ],
