@@ -80,7 +80,7 @@ export default function ProtectedImage({
         src={src}
         alt={alt}
         loading={loading}
-        className="h-full w-full object-cover"
+        className="relative h-full w-full object-cover"
         style={{
           WebkitTouchCallout: "none",
           WebkitUserSelect: "none",
