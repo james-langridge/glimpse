@@ -28,11 +28,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (photos.length === 0) return {};
 
   const siteUrl = process.env.SITE_URL || "";
-  const firstPhoto = photos[0];
-  const imageUrl = `${siteUrl}/api/shared-image/${upperCode}/${firstPhoto.filename}`;
+  const imageUrl = `${siteUrl}/api/og-image/${upperCode}`;
   const photoCount = photos.length;
   const description =
-    photoCount === 1 ? "Someone shared a photo with you" : `Someone shared ${photoCount} photos with you`;
+    photoCount === 1
+      ? "Someone shared a photo with you"
+      : `Someone shared ${photoCount} photos with you`;
 
   return {
     title: "Glimpse",
@@ -40,13 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: "Glimpse",
       description,
-      images: [
-        {
-          url: imageUrl,
-          ...(firstPhoto.width && { width: firstPhoto.width }),
-          ...(firstPhoto.height && { height: firstPhoto.height }),
-        },
-      ],
+      images: [{ url: imageUrl, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
