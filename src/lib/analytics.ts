@@ -2,6 +2,33 @@ import { createHash } from "crypto";
 import geoip from "geoip-lite";
 import { UAParser } from "ua-parser-js";
 
+const BOT_PATTERNS = [
+  "facebookexternalhit",
+  "facebot",
+  "twitterbot",
+  "linkedinbot",
+  "slackbot",
+  "whatsapp",
+  "telegrambot",
+  "discordbot",
+  "applebot",
+  "googlebot",
+  "bingbot",
+  "yandexbot",
+  "pinterestbot",
+  "redditbot",
+  "petalbot",
+  "semrushbot",
+  "ahrefsbot",
+  "mj12bot",
+  "preview",
+];
+
+export function isBot(ua: string): boolean {
+  const lower = ua.toLowerCase();
+  return BOT_PATTERNS.some((pattern) => lower.includes(pattern));
+}
+
 export function hashIP(ip: string): string {
   const salt = process.env.SESSION_SECRET || "";
   return createHash("sha256").update(salt + ip).digest("hex");

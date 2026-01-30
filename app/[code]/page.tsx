@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { getLinkByCode, getLinkStatus } from "@/src/db/links";
 import { getPhotosForCode } from "@/src/db/links";
 import { insertView } from "@/src/db/analytics";
-import { hashIP, parseGeo, parseUserAgent } from "@/src/lib/analytics";
+import { hashIP, isBot, parseGeo, parseUserAgent } from "@/src/lib/analytics";
 import ShareGallery from "@/src/components/ShareGallery";
 import DurationTracker from "@/src/components/DurationTracker";
 
@@ -59,6 +59,7 @@ async function recordView(linkId: string): Promise<number | null> {
     const forwarded = headersList.get("x-forwarded-for");
     const ip = forwarded ? forwarded.split(",")[0].trim() : null;
     const userAgent = headersList.get("user-agent") || "";
+    if (isBot(userAgent)) return null;
     const referrer = headersList.get("referer") || null;
 
     const ipHash = ip ? hashIP(ip) : null;
