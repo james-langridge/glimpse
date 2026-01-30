@@ -86,16 +86,6 @@ export default function NewLinkPage() {
         </div>
 
         <div className="mb-8">
-          <h2 className="mb-3 text-sm font-medium text-zinc-300">
-            Photos ({selectedPhotos.length} selected)
-          </h2>
-          <PhotoSelector
-            selected={selectedPhotos}
-            onChange={setSelectedPhotos}
-          />
-        </div>
-
-        <div className="mb-8">
           <h2 className="mb-3 text-sm font-medium text-zinc-300">Expiry</h2>
           <div className="flex flex-wrap gap-2">
             {EXPIRY_OPTIONS.map((opt) => (
@@ -125,7 +115,7 @@ export default function NewLinkPage() {
 
         {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
 
-        <div className="flex gap-3">
+        <div className="mb-8 flex gap-3">
           <button
             onClick={handleCreate}
             disabled={creating || selectedPhotos.length === 0}
@@ -139,6 +129,16 @@ export default function NewLinkPage() {
           >
             Cancel
           </button>
+        </div>
+
+        <div>
+          <h2 className="mb-3 text-sm font-medium text-zinc-300">
+            Photos ({selectedPhotos.length} selected)
+          </h2>
+          <PhotoSelector
+            selected={selectedPhotos}
+            onChange={setSelectedPhotos}
+          />
         </div>
       </div>
     </div>
