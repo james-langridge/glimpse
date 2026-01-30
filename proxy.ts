@@ -28,6 +28,5 @@ export const config = {
     "/api/links",
     "/api/links/:path*",
     "/api/analytics",
-    "/api/cleanup",
   ],
 };
