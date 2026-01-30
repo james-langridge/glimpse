@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 interface LinkItem {
   id: string;
@@ -13,6 +14,52 @@ interface LinkItem {
 
 interface LinkTableProps {
   links: LinkItem[];
+}
+
+function CopyButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    const url = `${window.location.origin}/${code}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="text-zinc-400 transition hover:text-white"
+      title="Copy share link"
+    >
+      {copied ? (
+        <svg className="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+function OpenButton({ code }: { code: string }) {
+  return (
+    <a
+      href={`/${code}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-zinc-400 transition hover:text-white"
+      title="Open share link"
+    >
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+      </svg>
+    </a>
+  );
 }
 
 const statusColors: Record<string, string> = {
@@ -90,13 +137,17 @@ export default function LinkTable({ links }: LinkTableProps) {
               <td className="py-3 pr-4 text-zinc-400">
                 {formatDate(link.created_at)}
               </td>
-              <td className="py-3 text-right">
-                <Link
-                  href={`/admin/links/${link.id}`}
-                  className="text-zinc-400 transition hover:text-white"
-                >
-                  View
-                </Link>
+              <td className="py-3">
+                <div className="flex items-center justify-end gap-3">
+                  <CopyButton code={link.code} />
+                  <OpenButton code={link.code} />
+                  <Link
+                    href={`/admin/links/${link.id}`}
+                    className="text-zinc-400 transition hover:text-white"
+                  >
+                    Edit
+                  </Link>
+                </div>
               </td>
             </tr>
           ))}
