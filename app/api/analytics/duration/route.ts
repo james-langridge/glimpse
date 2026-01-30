@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateDuration } from "@/src/db/analytics";
+import { checkRateLimit } from "@/src/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const limited = checkRateLimit(request, "analytics-duration", 30, 60_000);
+  if (limited) return limited;
+
   try {
     const { viewId, durationMs } = await request.json();
 

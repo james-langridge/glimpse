@@ -3,7 +3,8 @@ import geoip from "geoip-lite";
 import { UAParser } from "ua-parser-js";
 
 export function hashIP(ip: string): string {
-  return createHash("sha256").update(ip).digest("hex");
+  const salt = process.env.SESSION_SECRET || "";
+  return createHash("sha256").update(salt + ip).digest("hex");
 }
 
 export function parseGeo(ip: string): {
