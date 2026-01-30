@@ -1,8 +1,9 @@
-import { Pool, QueryResultRow } from "pg";
+import { Pool, PoolClient, QueryResultRow } from "pg";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+const globalForDb = globalThis as unknown as { pool: Pool };
+const pool =
+  globalForDb.pool ?? new Pool({ connectionString: process.env.DATABASE_URL });
+if (process.env.NODE_ENV !== "production") globalForDb.pool = pool;
 
 type Primitive = string | number | boolean | undefined | null;
 
@@ -27,4 +28,21 @@ export function sql<T extends QueryResultRow = QueryResultRow>(
     result += `$${i}${strings[i] ?? ""}`;
   }
   return query<T>(result, values);
+}
+
+export async function withTransaction<T>(
+  fn: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
 }

@@ -1,4 +1,4 @@
-import { sql } from "@/src/lib/db";
+import { query, sql } from "@/src/lib/db";
 
 export interface LinkView {
   id: number;
@@ -40,140 +40,88 @@ export async function updateDuration(viewId: number, durationMs: number) {
   `;
 }
 
-export async function getViewsForLink(
-  linkId: string,
-  days?: number,
-) {
+export async function getViewsForLink(linkId: string, days?: number) {
+  const conditions = ["share_link_id = $1"];
+  const values: (string | number)[] = [linkId];
   if (days) {
-    const result = await sql<LinkView>`
-      SELECT * FROM link_views
-      WHERE share_link_id = ${linkId}
-      AND viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-      ORDER BY viewed_at DESC
-    `;
-    return result.rows;
+    values.push(days);
+    conditions.push(`viewed_at >= NOW() - $${values.length} * INTERVAL '1 day'`);
   }
-  const result = await sql<LinkView>`
-    SELECT * FROM link_views
-    WHERE share_link_id = ${linkId}
-    ORDER BY viewed_at DESC
-  `;
+  const result = await query<LinkView>(
+    `SELECT * FROM link_views WHERE ${conditions.join(" AND ")} ORDER BY viewed_at DESC`,
+    values,
+  );
   return result.rows;
 }
 
-export async function getViewsOverTime(
-  days: number = 30,
-  linkId?: string,
-) {
+function buildAnalyticsFilter(days: number, linkId?: string) {
+  const conditions = [`viewed_at >= NOW() - $1 * INTERVAL '1 day'`];
+  const values: (string | number)[] = [days];
   if (linkId) {
-    const result = await sql<{ date: string; views: string }>`
-      SELECT DATE(viewed_at) as date, COUNT(*) as views
-      FROM link_views
-      WHERE viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-      AND share_link_id = ${linkId}
-      GROUP BY DATE(viewed_at)
-      ORDER BY date ASC
-    `;
-    return result.rows.map((r) => ({ date: r.date, views: parseInt(r.views, 10) }));
+    values.push(linkId);
+    conditions.push(`share_link_id = $${values.length}`);
   }
-  const result = await sql<{ date: string; views: string }>`
-    SELECT DATE(viewed_at) as date, COUNT(*) as views
-    FROM link_views
-    WHERE viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-    GROUP BY DATE(viewed_at)
-    ORDER BY date ASC
-  `;
+  return { where: conditions.join(" AND "), values };
+}
+
+export async function getViewsOverTime(days: number = 30, linkId?: string) {
+  const { where, values } = buildAnalyticsFilter(days, linkId);
+  const result = await query<{ date: string; views: string }>(
+    `SELECT DATE(viewed_at) as date, COUNT(*) as views
+     FROM link_views WHERE ${where}
+     GROUP BY DATE(viewed_at) ORDER BY date ASC`,
+    values,
+  );
   return result.rows.map((r) => ({ date: r.date, views: parseInt(r.views, 10) }));
 }
 
-export async function getDeviceBreakdown(
-  days: number = 30,
-  linkId?: string,
-) {
-  if (linkId) {
-    const result = await sql<{ device_type: string; count: string }>`
-      SELECT COALESCE(device_type, 'unknown') as device_type, COUNT(*) as count
-      FROM link_views
-      WHERE viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-      AND share_link_id = ${linkId}
-      GROUP BY device_type
-      ORDER BY count DESC
-    `;
-    return result.rows.map((r) => ({ device_type: r.device_type, count: parseInt(r.count, 10) }));
-  }
-  const result = await sql<{ device_type: string; count: string }>`
-    SELECT COALESCE(device_type, 'unknown') as device_type, COUNT(*) as count
-    FROM link_views
-    WHERE viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-    GROUP BY device_type
-    ORDER BY count DESC
-  `;
+export async function getDeviceBreakdown(days: number = 30, linkId?: string) {
+  const { where, values } = buildAnalyticsFilter(days, linkId);
+  const result = await query<{ device_type: string; count: string }>(
+    `SELECT COALESCE(device_type, 'unknown') as device_type, COUNT(*) as count
+     FROM link_views WHERE ${where}
+     GROUP BY device_type ORDER BY count DESC`,
+    values,
+  );
   return result.rows.map((r) => ({ device_type: r.device_type, count: parseInt(r.count, 10) }));
 }
 
-export async function getBrowserBreakdown(
-  days: number = 30,
-  linkId?: string,
-) {
-  if (linkId) {
-    const result = await sql<{ browser: string; count: string }>`
-      SELECT COALESCE(browser, 'unknown') as browser, COUNT(*) as count
-      FROM link_views
-      WHERE viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-      AND share_link_id = ${linkId}
-      GROUP BY browser
-      ORDER BY count DESC
-    `;
-    return result.rows.map((r) => ({ browser: r.browser, count: parseInt(r.count, 10) }));
-  }
-  const result = await sql<{ browser: string; count: string }>`
-    SELECT COALESCE(browser, 'unknown') as browser, COUNT(*) as count
-    FROM link_views
-    WHERE viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-    GROUP BY browser
-    ORDER BY count DESC
-  `;
+export async function getBrowserBreakdown(days: number = 30, linkId?: string) {
+  const { where, values } = buildAnalyticsFilter(days, linkId);
+  const result = await query<{ browser: string; count: string }>(
+    `SELECT COALESCE(browser, 'unknown') as browser, COUNT(*) as count
+     FROM link_views WHERE ${where}
+     GROUP BY browser ORDER BY count DESC`,
+    values,
+  );
   return result.rows.map((r) => ({ browser: r.browser, count: parseInt(r.count, 10) }));
 }
 
-export async function getGeoBreakdown(
-  days: number = 30,
-  linkId?: string,
-) {
-  if (linkId) {
-    const result = await sql<{ country: string; city: string; count: string }>`
-      SELECT COALESCE(country, 'unknown') as country, COALESCE(city, 'unknown') as city, COUNT(*) as count
-      FROM link_views
-      WHERE viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-      AND share_link_id = ${linkId}
-      GROUP BY country, city
-      ORDER BY count DESC
-    `;
-    return result.rows.map((r) => ({ country: r.country, city: r.city, count: parseInt(r.count, 10) }));
-  }
-  const result = await sql<{ country: string; city: string; count: string }>`
-    SELECT COALESCE(country, 'unknown') as country, COALESCE(city, 'unknown') as city, COUNT(*) as count
-    FROM link_views
-    WHERE viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-    GROUP BY country, city
-    ORDER BY count DESC
-  `;
+export async function getGeoBreakdown(days: number = 30, linkId?: string) {
+  const { where, values } = buildAnalyticsFilter(days, linkId);
+  const result = await query<{ country: string; city: string; count: string }>(
+    `SELECT COALESCE(country, 'unknown') as country, COALESCE(city, 'unknown') as city, COUNT(*) as count
+     FROM link_views WHERE ${where}
+     GROUP BY country, city ORDER BY count DESC`,
+    values,
+  );
   return result.rows.map((r) => ({ country: r.country, city: r.city, count: parseInt(r.count, 10) }));
 }
 
 export async function getOverviewStats(days: number = 30) {
-  const result = await sql<{
+  const result = await query<{
     total_views: string;
     unique_visitors: string;
     avg_duration_ms: string;
-  }>`
-    SELECT
+  }>(
+    `SELECT
       COUNT(*) as total_views,
       COUNT(DISTINCT ip_hash) as unique_visitors,
       COALESCE(AVG(session_duration_ms), 0) as avg_duration_ms
-    FROM link_views
-    WHERE viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-  `;
+     FROM link_views
+     WHERE viewed_at >= NOW() - $1 * INTERVAL '1 day'`,
+    [days],
+  );
   const row = result.rows[0];
   return {
     total_views: parseInt(row.total_views, 10),
@@ -183,9 +131,7 @@ export async function getOverviewStats(days: number = 30) {
 }
 
 export async function getRecentViews(limit: number = 20) {
-  const result = await sql<
-    LinkView & { code: string }
-  >`
+  const result = await sql<LinkView & { code: string }>`
     SELECT lv.*, sl.code
     FROM link_views lv
     JOIN share_links sl ON sl.id = lv.share_link_id
@@ -196,27 +142,25 @@ export async function getRecentViews(limit: number = 20) {
 }
 
 export async function getPerLinkStats(days: number = 30) {
-  const result = await sql<{
+  const result = await query<{
     share_link_id: string;
     code: string;
     revoked: boolean;
     expires_at: Date;
     views: string;
     unique_visitors: string;
-  }>`
-    SELECT
-      sl.id as share_link_id,
-      sl.code,
-      sl.revoked,
-      sl.expires_at,
+  }>(
+    `SELECT
+      sl.id as share_link_id, sl.code, sl.revoked, sl.expires_at,
       COUNT(lv.id) as views,
       COUNT(DISTINCT lv.ip_hash) as unique_visitors
-    FROM share_links sl
-    LEFT JOIN link_views lv ON lv.share_link_id = sl.id
-      AND lv.viewed_at >= NOW() - CAST(${days + " days"} AS INTERVAL)
-    GROUP BY sl.id, sl.code, sl.revoked, sl.expires_at
-    ORDER BY views DESC
-  `;
+     FROM share_links sl
+     LEFT JOIN link_views lv ON lv.share_link_id = sl.id
+       AND lv.viewed_at >= NOW() - $1 * INTERVAL '1 day'
+     GROUP BY sl.id, sl.code, sl.revoked, sl.expires_at
+     ORDER BY views DESC`,
+    [days],
+  );
   return result.rows.map((r) => ({
     ...r,
     views: parseInt(r.views, 10),

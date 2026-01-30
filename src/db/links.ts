@@ -1,4 +1,4 @@
-import { sql, query } from "@/src/lib/db";
+import { sql, query, withTransaction } from "@/src/lib/db";
 import { Photo } from "./photos";
 
 export interface ShareLink {
@@ -81,20 +81,32 @@ export async function insertLinkPhotos(
   linkId: string,
   photoIds: string[],
 ) {
-  for (let i = 0; i < photoIds.length; i++) {
-    await sql`
-      INSERT INTO share_link_photos (share_link_id, photo_id, display_order)
-      VALUES (${linkId}, ${photoIds[i]}, ${i})
-    `;
-  }
+  await withTransaction(async (client) => {
+    for (let i = 0; i < photoIds.length; i++) {
+      await client.query(
+        "INSERT INTO share_link_photos (share_link_id, photo_id, display_order) VALUES ($1, $2, $3)",
+        [linkId, photoIds[i], i],
+      );
+    }
+  });
 }
 
 export async function updateLinkPhotos(
   linkId: string,
   photoIds: string[],
 ) {
-  await sql`DELETE FROM share_link_photos WHERE share_link_id = ${linkId}`;
-  await insertLinkPhotos(linkId, photoIds);
+  await withTransaction(async (client) => {
+    await client.query(
+      "DELETE FROM share_link_photos WHERE share_link_id = $1",
+      [linkId],
+    );
+    for (let i = 0; i < photoIds.length; i++) {
+      await client.query(
+        "INSERT INTO share_link_photos (share_link_id, photo_id, display_order) VALUES ($1, $2, $3)",
+        [linkId, photoIds[i], i],
+      );
+    }
+  });
 }
 
 export async function getPhotosForLink(linkId: string) {
