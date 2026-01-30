@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLinkByCode, getLinkStatus, getPhotosForCode } from "@/src/db/links";
-import { readPhoto, statPhoto } from "@/src/lib/storage";
+import { readPhoto } from "@/src/lib/storage";
 
 const MIME_TYPES: Record<string, string> = {
   jpg: "image/jpeg",
@@ -35,12 +35,11 @@ export async function GET(
     }
 
     const data = await readPhoto(photo.filename);
-    const { size } = await statPhoto(photo.filename);
 
     return new NextResponse(new Uint8Array(data), {
       headers: {
         "Content-Type": mimeType(photo.filename),
-        "Content-Length": String(size),
+        "Content-Length": String(data.length),
         "Cache-Control": "private, max-age=3600, must-revalidate",
         "Content-Disposition": "inline",
         "X-Frame-Options": "DENY",

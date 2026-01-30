@@ -37,17 +37,10 @@ export default function ProtectedImage({
       return false;
     };
 
-    const handleTouchStart = (e: TouchEvent) => {
-      const id = setTimeout(() => prevent(e), 200);
-      const clear = () => clearTimeout(id);
-      document.addEventListener("touchend", clear, { once: true });
-    };
-
     const elements = [img, container];
     for (const el of elements) {
       el.addEventListener("contextmenu", prevent);
       el.addEventListener("selectstart", prevent);
-      el.addEventListener("touchstart", handleTouchStart, { passive: false });
       el.addEventListener("dragstart", prevent);
       (el as HTMLElement).draggable = false;
     }
@@ -56,7 +49,6 @@ export default function ProtectedImage({
       for (const el of elements) {
         el.removeEventListener("contextmenu", prevent);
         el.removeEventListener("selectstart", prevent);
-        el.removeEventListener("touchstart", handleTouchStart);
         el.removeEventListener("dragstart", prevent);
       }
     };
@@ -70,7 +62,9 @@ export default function ProtectedImage({
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={
-        onClick ? (e) => e.key === "Enter" && onClick() : undefined
+        onClick
+          ? (e) => (e.key === "Enter" || e.key === " ") && onClick()
+          : undefined
       }
     >
       {blurDataURL && (
