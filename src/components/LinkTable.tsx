@@ -91,6 +91,51 @@ function timeUntil(dateStr: string): string {
   return `${minutes}m`;
 }
 
+function LinkCard({ link }: { link: LinkItem }) {
+  return (
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="flex items-center justify-between">
+        <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
+          {link.code}
+        </code>
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
+        >
+          {link.status}
+        </span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <span className="text-zinc-500">Photos</span>
+          <p className="text-zinc-300">{link.photo_count}</p>
+        </div>
+        <div>
+          <span className="text-zinc-500">Expires</span>
+          <p className="text-zinc-300">
+            {link.status === "active"
+              ? timeUntil(link.expires_at)
+              : formatDate(link.expires_at)}
+          </p>
+        </div>
+        <div className="col-span-2">
+          <span className="text-zinc-500">Created</span>
+          <p className="text-zinc-400">{formatDate(link.created_at)}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-4 border-t border-zinc-800 pt-3">
+        <CopyButton code={link.code} />
+        <OpenButton code={link.code} />
+        <Link
+          href={`/admin/links/${link.id}`}
+          className="ml-auto text-sm text-zinc-400 transition hover:text-white"
+        >
+          Edit
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function LinkTable({ links }: LinkTableProps) {
   if (links.length === 0) {
     return (
@@ -101,58 +146,70 @@ export default function LinkTable({ links }: LinkTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-zinc-800 text-zinc-400">
-            <th className="pb-3 pr-4 font-medium">Code</th>
-            <th className="pb-3 pr-4 font-medium">Status</th>
-            <th className="pb-3 pr-4 font-medium">Photos</th>
-            <th className="pb-3 pr-4 font-medium">Expires</th>
-            <th className="pb-3 pr-4 font-medium">Created</th>
-            <th className="pb-3 font-medium"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {links.map((link) => (
-            <tr key={link.id} className="border-b border-zinc-800/50">
-              <td className="py-3 pr-4">
-                <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
-                  {link.code}
-                </code>
-              </td>
-              <td className="py-3 pr-4">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
-                >
-                  {link.status}
-                </span>
-              </td>
-              <td className="py-3 pr-4 text-zinc-300">{link.photo_count}</td>
-              <td className="py-3 pr-4 text-zinc-300">
-                {link.status === "active"
-                  ? timeUntil(link.expires_at)
-                  : formatDate(link.expires_at)}
-              </td>
-              <td className="py-3 pr-4 text-zinc-400">
-                {formatDate(link.created_at)}
-              </td>
-              <td className="py-3">
-                <div className="flex items-center justify-end gap-3">
-                  <CopyButton code={link.code} />
-                  <OpenButton code={link.code} />
-                  <Link
-                    href={`/admin/links/${link.id}`}
-                    className="text-zinc-400 transition hover:text-white"
-                  >
-                    Edit
-                  </Link>
-                </div>
-              </td>
+    <>
+      {/* Mobile: card layout */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {links.map((link) => (
+          <LinkCard key={link.id} link={link} />
+        ))}
+      </div>
+
+      {/* Desktop: table layout */}
+      <div className="hidden md:block">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-zinc-800 text-zinc-400">
+              <th className="pb-3 pr-4 font-medium">Code</th>
+              <th className="pb-3 pr-4 font-medium">Status</th>
+              <th className="pb-3 pr-4 font-medium">Photos</th>
+              <th className="pb-3 pr-4 font-medium">Expires</th>
+              <th className="pb-3 pr-4 font-medium">Created</th>
+              <th className="pb-3 font-medium"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {links.map((link) => (
+              <tr key={link.id} className="border-b border-zinc-800/50">
+                <td className="py-3 pr-4">
+                  <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
+                    {link.code}
+                  </code>
+                </td>
+                <td className="py-3 pr-4">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
+                  >
+                    {link.status}
+                  </span>
+                </td>
+                <td className="py-3 pr-4 text-zinc-300">
+                  {link.photo_count}
+                </td>
+                <td className="py-3 pr-4 text-zinc-300">
+                  {link.status === "active"
+                    ? timeUntil(link.expires_at)
+                    : formatDate(link.expires_at)}
+                </td>
+                <td className="py-3 pr-4 text-zinc-400">
+                  {formatDate(link.created_at)}
+                </td>
+                <td className="py-3">
+                  <div className="flex items-center justify-end gap-3">
+                    <CopyButton code={link.code} />
+                    <OpenButton code={link.code} />
+                    <Link
+                      href={`/admin/links/${link.id}`}
+                      className="text-zinc-400 transition hover:text-white"
+                    >
+                      Edit
+                    </Link>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
