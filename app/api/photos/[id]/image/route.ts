@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 import { getPhotoById } from "@/src/db/photos";
 import { readPhoto } from "@/src/lib/storage";
 
@@ -15,8 +16,10 @@ function mimeType(filename: string): string {
   return MIME_TYPES[ext] ?? "application/octet-stream";
 }
 
+const MAX_WIDTH = 1920;
+
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -27,12 +30,34 @@ export async function GET(
       return NextResponse.json({ error: "Photo not found" }, { status: 404 });
     }
 
-    const data = await readPhoto(photo.filename);
+    const raw = await readPhoto(photo.filename);
+    const wParam = request.nextUrl.searchParams.get("w");
+    const requestedWidth = wParam ? parseInt(wParam, 10) : null;
+    const width =
+      requestedWidth && requestedWidth > 0 && requestedWidth <= MAX_WIDTH
+        ? requestedWidth
+        : null;
 
-    return new NextResponse(new Uint8Array(data), {
+    if (width) {
+      const resized = await sharp(raw)
+        .resize(width, undefined, { withoutEnlargement: true })
+        .jpeg({ quality: 75 })
+        .toBuffer();
+
+      return new NextResponse(new Uint8Array(resized), {
+        headers: {
+          "Content-Type": "image/jpeg",
+          "Content-Length": String(resized.length),
+          "Cache-Control": "private, max-age=3600, must-revalidate",
+          "Content-Disposition": "inline",
+        },
+      });
+    }
+
+    return new NextResponse(new Uint8Array(raw), {
       headers: {
         "Content-Type": mimeType(photo.filename),
-        "Content-Length": String(data.length),
+        "Content-Length": String(raw.length),
         "Cache-Control": "private, max-age=3600, must-revalidate",
         "Content-Disposition": "inline",
       },

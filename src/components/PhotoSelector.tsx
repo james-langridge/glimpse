@@ -83,7 +83,7 @@ export default function PhotoSelector({
                 />
               )}
               <img
-                src={`/api/photos/${photo.id}/image`}
+                src={`/api/photos/${photo.id}/image?w=400`}
                 alt={photo.original_name ?? photo.filename}
                 className="absolute inset-0 h-full w-full object-cover"
                 loading="lazy"
