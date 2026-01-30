@@ -4,6 +4,7 @@ import { Photo } from "./photos";
 export interface ShareLink {
   id: string;
   code: string;
+  title: string | null;
   expires_at: Date;
   revoked: boolean;
   revoked_at: Date | null;

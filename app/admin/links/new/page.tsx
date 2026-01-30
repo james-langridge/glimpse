@@ -17,6 +17,7 @@ export default function NewLinkPage() {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [expiryMs, setExpiryMs] = useState(7 * 24 * 60 * 60 * 1000);
   const [customExpiry, setCustomExpiry] = useState("");
+  const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
@@ -49,7 +50,11 @@ export default function NewLinkPage() {
       const res = await fetch("/api/links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoIds: selectedPhotos, expiresAt }),
+        body: JSON.stringify({
+          photoIds: selectedPhotos,
+          expiresAt,
+          title: title.trim() || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -82,6 +87,21 @@ export default function NewLinkPage() {
           </h1>
           <p className="mt-1 text-sm text-zinc-400">
             Select photos and set an expiry
+          </p>
+        </div>
+
+        <div className="mb-8">
+          <h2 className="mb-3 text-sm font-medium text-zinc-300">Title</h2>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Photos from today"
+            maxLength={255}
+            className="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white placeholder:text-zinc-500"
+          />
+          <p className="mt-1 text-xs text-zinc-500">
+            Optional — shown in link previews
           </p>
         </div>
 

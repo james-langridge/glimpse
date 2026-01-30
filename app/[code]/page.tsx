@@ -30,7 +30,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const siteUrl = process.env.SITE_URL || "";
   const imageUrl = `${siteUrl}/api/og-image/${upperCode}`;
   const photoCount = photos.length;
-  const title = photoCount === 1 ? "1 photo" : `${photoCount} photos`;
+  const title =
+    link.title || (photoCount === 1 ? "1 photo" : `${photoCount} photos`);
   const expiresAt = new Date(link.expires_at);
   const description = `Link expires ${expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short" })}`;
 

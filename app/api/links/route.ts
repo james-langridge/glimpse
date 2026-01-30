@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { photoIds, expiresAt } = body;
+    const { photoIds, expiresAt, title } = body;
 
     if (!Array.isArray(photoIds) || photoIds.length === 0) {
       return NextResponse.json(
@@ -87,9 +87,11 @@ export async function POST(request: NextRequest) {
 
     const id = generateId();
     await withTransaction(async (client) => {
+      const linkTitle =
+        typeof title === "string" && title.trim() ? title.trim() : null;
       await client.query(
-        "INSERT INTO share_links (id, code, expires_at) VALUES ($1, $2, $3)",
-        [id, code, expiresDate.toISOString()],
+        "INSERT INTO share_links (id, code, title, expires_at) VALUES ($1, $2, $3, $4)",
+        [id, code, linkTitle, expiresDate.toISOString()],
       );
       for (let i = 0; i < photoIds.length; i++) {
         await client.query(
