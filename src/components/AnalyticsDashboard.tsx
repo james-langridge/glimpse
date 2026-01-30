@@ -152,7 +152,7 @@ export default function AnalyticsDashboard() {
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-zinc-500">Loading analytics...</p>
+        <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
       </div>
     );
   }
@@ -199,7 +199,7 @@ export default function AnalyticsDashboard() {
           ))}
         </select>
         {loading && (
-          <span className="text-xs text-zinc-500">Updating...</span>
+          <div className="h-4 w-4 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
         )}
       </div>
 

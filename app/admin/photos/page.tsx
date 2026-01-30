@@ -57,7 +57,7 @@ export default function PhotosPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <p className="text-zinc-500">Loading...</p>
+            <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
           </div>
         ) : (
           <PhotoGrid photos={photos} onDelete={handleDelete} />

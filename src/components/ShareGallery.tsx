@@ -61,7 +61,8 @@ export default function ShareGallery({ photos, code }: ShareGalleryProps) {
         {photos.map((photo, i) => (
           <div
             key={photo.filename}
-            className="overflow-hidden rounded-lg"
+            className="animate-fade-in-up overflow-hidden rounded-lg"
+            style={{ animationDelay: `${i * 75}ms`, animationFillMode: "both" }}
           >
             <div
               className="relative"

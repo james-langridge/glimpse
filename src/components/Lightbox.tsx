@@ -52,7 +52,7 @@ export default function Lightbox({
   }, [onClose, hasMultiple, handlePrev, handleNext]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95">
+    <div className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/95">
       {/* Close button */}
       <button
         onClick={onClose}
@@ -92,7 +92,7 @@ export default function Lightbox({
       )}
 
       {/* Image */}
-      <div className="flex max-h-[90vh] max-w-[90vw] items-center justify-center">
+      <div className="animate-scale-in flex max-h-[90vh] max-w-[90vw] items-center justify-center">
         <ProtectedImage
           src={`/api/shared-image/${code}/${photo.filename}`}
           alt=""

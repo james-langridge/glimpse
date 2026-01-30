@@ -114,7 +114,7 @@ export default function LinkDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-zinc-500">Loading...</p>
+        <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
       </div>
     );
   }
