@@ -9,17 +9,28 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "geoip-lite": "^1.4.10",
+    "iron-session": "^8.0.4",
+    "nanoid": "^3.3.11",
     "next": "16.1.6",
+    "pg": "^8.17.2",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "recharts": "^3.7.0",
+    "sharp": "^0.34.5",
+    "ua-parser-js": "^2.0.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/geoip-lite": "^1.4.4",
     "@types/node": "^20",
+    "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ua-parser-js": "^0.7.39",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
