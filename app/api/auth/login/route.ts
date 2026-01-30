@@ -11,12 +11,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid password" }, { status: 401 });
   }
 
-  const expectedBuffer = Buffer.from(expected);
-  const actualBuffer = Buffer.from(actual);
-
-  const isValid =
-    expectedBuffer.length === actualBuffer.length &&
-    crypto.timingSafeEqual(expectedBuffer, actualBuffer);
+  const key = process.env.SESSION_SECRET!;
+  const hmacExpected = crypto.createHmac("sha256", key).update(expected).digest();
+  const hmacActual = crypto.createHmac("sha256", key).update(actual).digest();
+  const isValid = crypto.timingSafeEqual(hmacExpected, hmacActual);
 
   if (!isValid) {
     return NextResponse.json({ error: "Invalid password" }, { status: 401 });

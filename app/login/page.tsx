@@ -27,6 +27,8 @@ export default function LoginPage() {
       }
 
       router.push("/admin");
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
