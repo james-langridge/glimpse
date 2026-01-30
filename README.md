@@ -21,6 +21,7 @@ That's it. You stay in control of what's shared, who sees it, and for how long.
 Unlike sharing photos through social media, messaging apps, or cloud storage services, Glimpse keeps you in control:
 
 - **Your photos stay on your server.** They aren't uploaded to Google, Apple, Meta, or any third party. They live on a server that you own and control.
+- **Links are unguessable.** Each share code is 6 characters picked at random from 36 possible characters (A–Z, 0–9), giving over 2 billion combinations. Codes are generated using a cryptographic random number generator, and code lookups are rate-limited — so even an automated attack would take centuries to stumble on a valid link.
 - **Links expire automatically.** Every share link has an expiry date. Once it passes, the photos can't be accessed anymore. No "shared with link" that lives forever.
 - **You can revoke access instantly.** Changed your mind? Revoke a link and it stops working immediately.
 - **No viewer accounts.** The people you share with don't need to create accounts, hand over their email address, or download an app. Less data floating around means less risk.

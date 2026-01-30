@@ -79,6 +79,16 @@ export default function About() {
             </li>
             <li>
               <span className="font-medium text-zinc-300">
+                Links are unguessable.
+              </span>{" "}
+              Each share code is 6 characters picked at random from 36 possible
+              characters, giving over 2 billion combinations. Codes are
+              generated using a cryptographic random number generator, and code
+              lookups are rate-limited&mdash;so even an automated attack would
+              take centuries to stumble on a valid link.
+            </li>
+            <li>
+              <span className="font-medium text-zinc-300">
                 Links expire automatically.
               </span>{" "}
               Every share link has an expiry date. Once it passes, the photos
