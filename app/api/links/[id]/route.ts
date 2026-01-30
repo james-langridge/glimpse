@@ -53,9 +53,9 @@ export async function PUT(
 
     if (expiresAt) {
       const expiresDate = new Date(expiresAt);
-      if (isNaN(expiresDate.getTime())) {
+      if (isNaN(expiresDate.getTime()) || expiresDate <= new Date()) {
         return NextResponse.json(
-          { error: "Invalid expiry date" },
+          { error: "Expiry must be a valid future date" },
           { status: 400 },
         );
       }

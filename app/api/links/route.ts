@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateId, generateShareCode } from "@/src/lib/codes";
 import {
   getAllLinks,
-  insertLink,
-  insertLinkPhotos,
   isCodeUnique,
   getLinkStatus,
 } from "@/src/db/links";
-import { query } from "@/src/lib/db";
+import { query, withTransaction } from "@/src/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
@@ -88,8 +86,18 @@ export async function POST(request: NextRequest) {
     }
 
     const id = generateId();
-    await insertLink({ id, code, expires_at: expiresDate });
-    await insertLinkPhotos(id, photoIds);
+    await withTransaction(async (client) => {
+      await client.query(
+        "INSERT INTO share_links (id, code, expires_at) VALUES ($1, $2, $3)",
+        [id, code, expiresDate.toISOString()],
+      );
+      for (let i = 0; i < photoIds.length; i++) {
+        await client.query(
+          "INSERT INTO share_link_photos (share_link_id, photo_id, display_order) VALUES ($1, $2, $3)",
+          [id, photoIds[i], i],
+        );
+      }
+    });
 
     return NextResponse.json({ id, code });
   } catch (e) {
