@@ -29,11 +29,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const siteUrl = process.env.SITE_URL || "";
   const imageUrl = `${siteUrl}/api/og-image/${upperCode}`;
-  const photoCount = photos.length;
-  const description =
-    photoCount === 1
-      ? "Someone shared a photo with you"
-      : `Someone shared ${photoCount} photos with you`;
+  const expiresAt = new Date(link.expires_at);
+  const description = `Link expires ${expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}`;
 
   return {
     title: "Glimpse",
