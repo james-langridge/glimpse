@@ -23,6 +23,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
+    "/api/photos",
     "/api/photos/:path*",
     "/api/links/:path*",
     "/api/cleanup",
