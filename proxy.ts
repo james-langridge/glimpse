@@ -27,6 +27,7 @@ export const config = {
     "/api/photos/:path*",
     "/api/links",
     "/api/links/:path*",
+    "/api/analytics",
     "/api/cleanup",
   ],
 };

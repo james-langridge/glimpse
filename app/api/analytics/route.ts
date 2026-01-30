@@ -26,13 +26,13 @@ export async function GET(request: NextRequest) {
       perLink,
       recent,
     ] = await Promise.all([
-      getOverviewStats(validDays),
+      getOverviewStats(validDays, linkId),
       getViewsOverTime(validDays, linkId),
       getDeviceBreakdown(validDays, linkId),
       getBrowserBreakdown(validDays, linkId),
       getGeoBreakdown(validDays, linkId),
       getPerLinkStats(validDays),
-      getRecentViews(20),
+      getRecentViews(20, validDays, linkId),
     ]);
 
     return NextResponse.json({

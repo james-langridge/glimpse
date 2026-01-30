@@ -122,18 +122,24 @@ const statusColors: Record<string, string> = {
 export default function AnalyticsDashboard() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [days, setDays] = useState(30);
   const [linkId, setLinkId] = useState<string>("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const params = new URLSearchParams({ days: String(days) });
       if (linkId) params.set("linkId", linkId);
       const res = await fetch(`/api/analytics?${params}`);
       if (res.ok) {
         setData(await res.json());
+      } else {
+        setError(true);
       }
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -147,6 +153,14 @@ export default function AnalyticsDashboard() {
     return (
       <div className="flex items-center justify-center py-16">
         <p className="text-zinc-500">Loading analytics...</p>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <p className="text-zinc-400">Failed to load analytics data</p>
       </div>
     );
   }

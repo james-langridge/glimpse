@@ -108,7 +108,11 @@ export async function getGeoBreakdown(days: number = 30, linkId?: string) {
   return result.rows.map((r) => ({ country: r.country, city: r.city, count: parseInt(r.count, 10) }));
 }
 
-export async function getOverviewStats(days: number = 30) {
+export async function getOverviewStats(
+  days: number = 30,
+  linkId?: string,
+) {
+  const { where, values } = buildAnalyticsFilter(days, linkId);
   const result = await query<{
     total_views: string;
     unique_visitors: string;
@@ -119,8 +123,8 @@ export async function getOverviewStats(days: number = 30) {
       COUNT(DISTINCT ip_hash) as unique_visitors,
       COALESCE(AVG(session_duration_ms), 0) as avg_duration_ms
      FROM link_views
-     WHERE viewed_at >= NOW() - $1 * INTERVAL '1 day'`,
-    [days],
+     WHERE ${where}`,
+    values,
   );
   const row = result.rows[0];
   return {
@@ -130,14 +134,32 @@ export async function getOverviewStats(days: number = 30) {
   };
 }
 
-export async function getRecentViews(limit: number = 20) {
-  const result = await sql<LinkView & { code: string }>`
-    SELECT lv.*, sl.code
-    FROM link_views lv
-    JOIN share_links sl ON sl.id = lv.share_link_id
-    ORDER BY lv.viewed_at DESC
-    LIMIT ${limit}
-  `;
+export async function getRecentViews(
+  limit: number = 20,
+  days?: number,
+  linkId?: string,
+) {
+  const conditions: string[] = [];
+  const values: (string | number)[] = [];
+  if (days) {
+    values.push(days);
+    conditions.push(`lv.viewed_at >= NOW() - $${values.length} * INTERVAL '1 day'`);
+  }
+  if (linkId) {
+    values.push(linkId);
+    conditions.push(`lv.share_link_id = $${values.length}`);
+  }
+  values.push(limit);
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const result = await query<LinkView & { code: string }>(
+    `SELECT lv.*, sl.code
+     FROM link_views lv
+     JOIN share_links sl ON sl.id = lv.share_link_id
+     ${where}
+     ORDER BY lv.viewed_at DESC
+     LIMIT $${values.length}`,
+    values,
+  );
   return result.rows;
 }
 
