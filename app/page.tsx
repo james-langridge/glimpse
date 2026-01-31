@@ -11,12 +11,18 @@ export default function Home() {
         <p className="text-zinc-400">Enter your code to view photos</p>
         <CodeEntry />
       </main>
-      <footer className="absolute bottom-6">
+      <footer className="absolute bottom-6 flex gap-4">
         <Link
           href="/about"
           className="text-sm text-zinc-600 transition-colors hover:text-zinc-400"
         >
           About Glimpse
+        </Link>
+        <Link
+          href="/login"
+          className="text-sm text-zinc-600 transition-colors hover:text-zinc-400"
+        >
+          Admin
         </Link>
       </footer>
     </div>
