@@ -20,8 +20,9 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const image = sharp(buffer);
+      const rawBuffer = Buffer.from(await file.arrayBuffer());
+      const rotated = await sharp(rawBuffer).rotate().toBuffer();
+      const image = sharp(rotated);
       const metadata = await image.metadata();
 
       const width = metadata.width ?? null;
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       );
       const filename = `${id}.${ext || "jpg"}`;
 
-      await savePhoto(filename, buffer);
+      await savePhoto(filename, rotated);
       try {
         await insertPhoto({
           id,
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
           height,
           aspect_ratio: aspectRatio,
           blur_data: blurData,
-          file_size: buffer.length,
+          file_size: rotated.length,
         });
       } catch (e) {
         await deletePhotoFile(filename);

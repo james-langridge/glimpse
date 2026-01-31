@@ -28,6 +28,7 @@ export async function GET(
     const data = await readPhoto(firstPhoto.filename);
 
     const resized = await sharp(data)
+      .rotate()
       .resize(OG_WIDTH, OG_HEIGHT, { fit: "cover" })
       .jpeg({ quality: 80 })
       .toBuffer();

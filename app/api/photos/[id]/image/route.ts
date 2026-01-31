@@ -40,6 +40,7 @@ export async function GET(
 
     if (width) {
       const resized = await sharp(raw)
+        .rotate()
         .resize(width, undefined, { withoutEnlargement: true })
         .jpeg({ quality: 75 })
         .toBuffer();
