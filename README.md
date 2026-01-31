@@ -225,6 +225,7 @@ The repo includes a `Dockerfile.cleanup` for running cleanup as a scheduled Rail
 2. Set the Dockerfile path to `Dockerfile.cleanup`
 3. Add the `SITE_URL` and `CLEANUP_SECRET` environment variables (matching the values on your main app service)
 4. Enable a cron schedule in the service settings (e.g. `0 3 * * *` for daily at 3 AM UTC)
+5. Set the watch path to `/Dockerfile.cleanup` so unrelated code changes don't trigger a redeploy
 
 Railway runs the service's start command on the cron schedule, then the container exits until the next run.
 
