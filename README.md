@@ -177,7 +177,7 @@ DISPLAY_TIMEZONE=Europe/London
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/glimpse.git
+git clone https://github.com/james-langridge/glimpse.git
 cd glimpse
 
 # Install dependencies
@@ -305,4 +305,4 @@ npm run build
 
 ## License
 
-All rights reserved.
+MIT — see [LICENSE](LICENSE) for details.

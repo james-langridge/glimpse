@@ -1,6 +1,8 @@
 {
   "name": "glimpse",
   "version": "0.1.0",
+  "author": "James Langridge <james@langridge.dev>",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev",
