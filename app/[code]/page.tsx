@@ -8,6 +8,7 @@ import { hashIP, isBot, parseGeo, parseUserAgent } from "@/src/lib/analytics";
 import ShareGallery from "@/src/components/ShareGallery";
 import DurationTracker from "@/src/components/DurationTracker";
 import Footer from "@/src/components/Footer";
+import ExpiryCountdown from "@/src/components/ExpiryCountdown";
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -149,6 +150,7 @@ export default async function SharePage({ params }: Props) {
           {link.title}
         </h1>
       )}
+      <ExpiryCountdown expiresAt={new Date(link.expires_at).toISOString()} />
       <ShareGallery photos={photos} code={upperCode} />
       <Footer />
       {viewId !== null && <DurationTracker viewId={viewId} />}
