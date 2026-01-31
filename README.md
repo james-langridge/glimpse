@@ -207,13 +207,26 @@ The production server runs on port 3000 by default. Use a reverse proxy (Nginx, 
 
 ### Photo Cleanup
 
-Glimpse includes an automatic cleanup endpoint that deletes photos older than `CLEANUP_DAYS` days (default 30) that aren't part of any active share link. Set up a cron job to call it periodically:
+Glimpse includes an automatic cleanup endpoint that deletes photos older than `CLEANUP_DAYS` days (default 30) that aren't part of any active share link. Call it periodically with a cron job.
+
+**Standard cron:**
 
 ```bash
 # Run cleanup daily at 3 AM
-0 3 * * * curl -X POST https://photos.example.com/api/cleanup \
+0 3 * * * curl -sf -X POST https://photos.example.com/api/cleanup \
   -H "Authorization: Bearer YOUR_CLEANUP_SECRET"
 ```
+
+**Railway:**
+
+The repo includes a `Dockerfile.cleanup` for running cleanup as a scheduled Railway service:
+
+1. Add a new service in your Railway project pointing at this repo
+2. Set the Dockerfile path to `Dockerfile.cleanup`
+3. Add the `SITE_URL` and `CLEANUP_SECRET` environment variables (matching the values on your main app service)
+4. Enable a cron schedule in the service settings (e.g. `0 3 * * *` for daily at 3 AM UTC)
+
+Railway runs the service's start command on the cron schedule, then the container exits until the next run.
 
 ### Reverse Proxy (Nginx Example)
 
@@ -241,7 +254,7 @@ The `X-Forwarded-For` header is important -- Glimpse uses it for rate limiting a
 
 ### Docker (Example)
 
-Glimpse doesn't ship a Dockerfile yet, but here's a starting point:
+Here's a starting point for running the main app in Docker:
 
 ```dockerfile
 FROM node:20-alpine
