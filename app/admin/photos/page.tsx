@@ -19,6 +19,7 @@ interface Photo {
 export default function PhotosPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"grid" | "table">("grid");
 
   const fetchPhotos = useCallback(async () => {
     try {
@@ -55,12 +56,28 @@ export default function PhotosPage() {
           <ImageUpload onUploadComplete={fetchPhotos} />
         </div>
 
+        <div className="mb-6 flex gap-1 rounded-lg bg-zinc-900 p-1 self-start w-fit">
+          {(["grid", "table"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                view === v
+                  ? "bg-zinc-800 text-white"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              {v === "grid" ? "Grid" : "Table"}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
           </div>
         ) : (
-          <PhotoGrid photos={photos} onDelete={handleDelete} />
+          <PhotoGrid photos={photos} onDelete={handleDelete} view={view} />
         )}
       </div>
     </div>

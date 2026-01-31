@@ -17,6 +17,7 @@ interface Photo {
 interface PhotoGridProps {
   photos: Photo[];
   onDelete: (id: string) => void;
+  view: "grid" | "table";
 }
 
 function formatBytes(bytes: number | null): string {
@@ -26,7 +27,25 @@ function formatBytes(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function PhotoGrid({ photos, onDelete }: PhotoGridProps) {
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatDimensions(
+  width: number | null,
+  height: number | null,
+): string {
+  if (width === null || height === null) return "";
+  return `${width}×${height}`;
+}
+
+export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -80,6 +99,62 @@ export default function PhotoGrid({ photos, onDelete }: PhotoGridProps) {
     );
   }
 
+  if (view === "table") {
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-zinc-800 text-zinc-400">
+              <th className="pb-3 pr-4 font-medium"></th>
+              <th className="pb-3 pr-4 font-medium">Filename</th>
+              <th className="pb-3 pr-4 font-medium">Dimensions</th>
+              <th className="pb-3 pr-4 font-medium">Size</th>
+              <th className="pb-3 pr-4 font-medium">Uploaded</th>
+              <th className="pb-3 font-medium"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {photos.map((photo) => (
+              <tr key={photo.id} className="border-b border-zinc-800/50">
+                <td className="py-2 pr-4">
+                  <img
+                    src={`/api/photos/${photo.id}/image?w=400`}
+                    alt={photo.original_name ?? photo.filename}
+                    className="h-10 w-10 rounded object-cover"
+                    loading="lazy"
+                  />
+                </td>
+                <td className="py-2 pr-4 text-zinc-300">
+                  <span className="line-clamp-1">
+                    {photo.original_name ?? photo.filename}
+                  </span>
+                </td>
+                <td className="py-2 pr-4 text-zinc-400">
+                  {formatDimensions(photo.width, photo.height)}
+                </td>
+                <td className="py-2 pr-4 text-zinc-400">
+                  {formatBytes(photo.file_size)}
+                </td>
+                <td className="py-2 pr-4 text-zinc-400">
+                  {formatDate(photo.uploaded_at)}
+                </td>
+                <td className="py-2">
+                  <button
+                    onClick={() => handleDelete(photo.id)}
+                    disabled={deleting === photo.id}
+                    className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {deleting === photo.id ? "..." : "Delete"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {photos.map((photo) => {
@@ -116,11 +191,21 @@ export default function PhotoGrid({ photos, onDelete }: PhotoGridProps) {
               className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
             />
             <div
-              className={`absolute bottom-0 left-0 right-0 flex items-end justify-between p-2 transition ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+              className={`absolute bottom-0 left-0 right-0 flex items-end justify-between gap-2 p-2 transition ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
             >
-              <span className="truncate text-xs text-zinc-300">
-                {formatBytes(photo.file_size)}
-              </span>
+              <div className="min-w-0">
+                <p className="truncate text-xs text-zinc-200">
+                  {photo.original_name ?? photo.filename}
+                </p>
+                <p className="text-xs text-zinc-400">
+                  {[
+                    formatBytes(photo.file_size),
+                    formatDimensions(photo.width, photo.height),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
