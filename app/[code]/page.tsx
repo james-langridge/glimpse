@@ -7,6 +7,7 @@ import { insertView } from "@/src/db/analytics";
 import { hashIP, isBot, parseGeo, parseUserAgent } from "@/src/lib/analytics";
 import ShareGallery from "@/src/components/ShareGallery";
 import DurationTracker from "@/src/components/DurationTracker";
+import Footer from "@/src/components/Footer";
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -144,6 +145,7 @@ export default async function SharePage({ params }: Props) {
   return (
     <div className="min-h-screen bg-zinc-950">
       <ShareGallery photos={photos} code={upperCode} />
+      <Footer />
       {viewId !== null && <DurationTracker viewId={viewId} />}
     </div>
   );
