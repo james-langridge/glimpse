@@ -48,6 +48,10 @@ export default function LinkDetailPage() {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editingExpiry, setEditingExpiry] = useState(false);
+  const [expiryValue, setExpiryValue] = useState("");
+  const [savingExpiry, setSavingExpiry] = useState(false);
+  const [expiryError, setExpiryError] = useState("");
 
   const fetchLink = useCallback(async () => {
     try {
@@ -109,6 +113,39 @@ export default function LinkDetailPage() {
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function startEditingExpiry() {
+    if (!link) return;
+    // Convert ISO date to datetime-local format (YYYY-MM-DDTHH:MM)
+    const d = new Date(link.expires_at);
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    setExpiryValue(local.toISOString().slice(0, 16));
+    setExpiryError("");
+    setEditingExpiry(true);
+  }
+
+  async function handleSaveExpiry() {
+    setSavingExpiry(true);
+    setExpiryError("");
+    try {
+      const res = await fetch(`/api/links/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expiresAt: new Date(expiryValue).toISOString() }),
+      });
+      if (res.ok) {
+        setEditingExpiry(false);
+        fetchLink();
+      } else {
+        const data = await res.json();
+        setExpiryError(data.error || "Failed to update expiry");
+      }
+    } catch {
+      setExpiryError("Failed to update expiry");
+    } finally {
+      setSavingExpiry(false);
+    }
   }
 
   if (loading) {
@@ -181,10 +218,49 @@ export default function LinkDetailPage() {
             </div>
           </div>
           <div className="rounded-lg bg-zinc-900 p-4">
-            <div className="text-xs text-zinc-400">Expires</div>
-            <div className="mt-1 text-sm text-white">
-              {formatDate(link.expires_at)}
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-zinc-400">Expires</div>
+              {!editingExpiry && !link.revoked && (
+                <button
+                  onClick={startEditingExpiry}
+                  className="text-xs text-zinc-500 transition hover:text-white"
+                >
+                  Edit
+                </button>
+              )}
             </div>
+            {editingExpiry ? (
+              <div className="mt-1">
+                <input
+                  type="datetime-local"
+                  value={expiryValue}
+                  onChange={(e) => setExpiryValue(e.target.value)}
+                  className="w-full rounded bg-zinc-800 px-2 py-1 text-sm text-white [color-scheme:dark]"
+                />
+                {expiryError && (
+                  <p className="mt-1 text-xs text-red-400">{expiryError}</p>
+                )}
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={handleSaveExpiry}
+                    disabled={savingExpiry || !expiryValue}
+                    className="rounded bg-white px-2 py-0.5 text-xs font-medium text-zinc-900 transition hover:bg-zinc-200 disabled:opacity-50"
+                  >
+                    {savingExpiry ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={() => setEditingExpiry(false)}
+                    className="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300 transition hover:bg-zinc-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-1 text-sm text-white">
+                {formatDate(link.expires_at)}
+              </div>
+            )}
           </div>
           <div className="rounded-lg bg-zinc-900 p-4">
             <div className="text-xs text-zinc-400">Status</div>
