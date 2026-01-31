@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Photo {
   id: string;
@@ -28,6 +28,19 @@ function formatBytes(bytes: number | null): string {
 
 export default function PhotoGrid({ photos, onDelete }: PhotoGridProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeId) return;
+    function handleTap(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (!target.closest(`[data-photo-id="${activeId}"]`)) {
+        setActiveId(null);
+      }
+    }
+    document.addEventListener("click", handleTap);
+    return () => document.removeEventListener("click", handleTap);
+  }, [activeId]);
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this photo? This cannot be undone.")) return;
@@ -69,45 +82,59 @@ export default function PhotoGrid({ photos, onDelete }: PhotoGridProps) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-      {photos.map((photo) => (
-        <div
-          key={photo.id}
-          className="group relative overflow-hidden rounded-lg bg-zinc-800"
-        >
+      {photos.map((photo) => {
+        const isActive = activeId === photo.id;
+        return (
           <div
-            className="relative"
-            style={{ paddingBottom: `${(1 / photo.aspect_ratio) * 100}%` }}
+            key={photo.id}
+            data-photo-id={photo.id}
+            className="group relative overflow-hidden rounded-lg bg-zinc-800"
+            onClick={() => setActiveId(isActive ? null : photo.id)}
           >
-            {photo.blur_data && (
-              <img
-                src={photo.blur_data}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-                aria-hidden
-              />
-            )}
-            <img
-              src={`/api/photos/${photo.id}/image?w=480`}
-              alt={photo.original_name ?? photo.filename}
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="lazy"
-            />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
-          <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-2 opacity-0 transition group-hover:opacity-100">
-            <span className="truncate text-xs text-zinc-300">
-              {formatBytes(photo.file_size)}
-            </span>
-            <button
-              onClick={() => handleDelete(photo.id)}
-              disabled={deleting === photo.id}
-              className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+            <div
+              className="relative"
+              style={{
+                paddingBottom: `${(1 / photo.aspect_ratio) * 100}%`,
+              }}
             >
-              {deleting === photo.id ? "..." : "Delete"}
-            </button>
+              {photo.blur_data && (
+                <img
+                  src={photo.blur_data}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                  aria-hidden
+                />
+              )}
+              <img
+                src={`/api/photos/${photo.id}/image?w=480`}
+                alt={photo.original_name ?? photo.filename}
+                className="absolute inset-0 h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div
+              className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+            />
+            <div
+              className={`absolute bottom-0 left-0 right-0 flex items-end justify-between p-2 transition ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+            >
+              <span className="truncate text-xs text-zinc-300">
+                {formatBytes(photo.file_size)}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(photo.id);
+                }}
+                disabled={deleting === photo.id}
+                className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {deleting === photo.id ? "..." : "Delete"}
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
