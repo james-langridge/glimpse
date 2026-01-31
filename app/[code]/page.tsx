@@ -144,6 +144,11 @@ export default async function SharePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-zinc-950">
+      {link.title && (
+        <h1 className="px-4 pt-8 text-center text-2xl font-light tracking-widest text-white">
+          {link.title}
+        </h1>
+      )}
       <ShareGallery photos={photos} code={upperCode} />
       <Footer />
       {viewId !== null && <DurationTracker viewId={viewId} />}
