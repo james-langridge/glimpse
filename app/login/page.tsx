@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -35,7 +36,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+    <div className="flex min-h-dvh items-center justify-center bg-zinc-950">
+      <Link
+        href="/"
+        className="absolute left-6 top-6 text-zinc-700 transition-colors hover:text-zinc-400"
+        title="Back to home"
+      >
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
+        </svg>
+      </Link>
       <form
         onSubmit={handleSubmit}
         className="flex w-full max-w-sm flex-col gap-6 px-4"
