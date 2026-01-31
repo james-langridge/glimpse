@@ -20,6 +20,18 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Glimpse",
   description: "Temporary photo sharing",
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noarchive: true,
+      noimageindex: true,
+    },
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
