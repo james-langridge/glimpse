@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (photos.length === 0) return {};
 
   const siteUrl = process.env.SITE_URL || "";
-  const imageUrl = `${siteUrl}/api/og-image/${upperCode}`;
+  const imageUrl = `${siteUrl}/og-image.jpg`;
   const photoCount = photos.length;
   const title =
     link.title || (photoCount === 1 ? "1 photo" : `${photoCount} photos`);
