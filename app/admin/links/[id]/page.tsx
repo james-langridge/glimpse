@@ -15,6 +15,7 @@ interface Photo {
 interface LinkDetail {
   id: string;
   code: string;
+  title: string | null;
   status: "active" | "expired" | "revoked";
   expires_at: string;
   revoked: boolean;
@@ -187,6 +188,9 @@ export default function LinkDetailPage() {
               {link.status}
             </span>
           </div>
+          {link.title && (
+            <p className="mt-1 text-sm text-zinc-400">{link.title}</p>
+          )}
         </div>
 
         {/* Share URL */}

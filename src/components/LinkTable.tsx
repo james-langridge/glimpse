@@ -6,6 +6,7 @@ import { useState } from "react";
 interface LinkItem {
   id: string;
   code: string;
+  title: string | null;
   status: "active" | "expired" | "revoked";
   expires_at: string;
   created_at: string;
@@ -123,11 +124,16 @@ function LinkCard({ link }: { link: LinkItem }) {
   return (
     <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
       <div className="flex items-center justify-between">
-        <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
-          {link.code}
-        </code>
+        <div className="flex items-center gap-2">
+          <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
+            {link.code}
+          </code>
+          {link.title && (
+            <span className="truncate text-sm text-zinc-400">{link.title}</span>
+          )}
+        </div>
         <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
         >
           {link.status}
         </span>
@@ -207,9 +213,16 @@ export default function LinkTable({ links }: LinkTableProps) {
             {links.map((link) => (
               <tr key={link.id} className="border-b border-zinc-800/50">
                 <td className="py-3 pr-4">
-                  <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
-                    {link.code}
-                  </code>
+                  <div className="flex items-center gap-2">
+                    <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
+                      {link.code}
+                    </code>
+                    {link.title && (
+                      <span className="truncate text-sm text-zinc-400">
+                        {link.title}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="py-3 pr-4">
                   <span

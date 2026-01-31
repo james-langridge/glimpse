@@ -9,6 +9,7 @@ type Status = "active" | "expired" | "revoked";
 interface LinkItem {
   id: string;
   code: string;
+  title: string | null;
   status: Status;
   expires_at: string;
   created_at: string;
