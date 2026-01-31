@@ -1,0 +1,3 @@
+FROM alpine:3.20
+RUN apk add --no-cache curl
+CMD curl -sf -X POST "$SITE_URL/api/cleanup" -H "Authorization: Bearer $CLEANUP_SECRET"
