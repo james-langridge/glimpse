@@ -25,7 +25,7 @@ Unlike sharing photos through social media, messaging apps, or cloud storage ser
 - **Links expire automatically.** Every share link has an expiry date. Once it passes, the photos can't be accessed anymore. No "shared with link" that lives forever.
 - **You can revoke access instantly.** Changed your mind? Revoke a link and it stops working immediately.
 - **No viewer accounts.** The people you share with don't need to create accounts, hand over their email address, or download an app. Less data floating around means less risk.
-- **Photos are cleaned up automatically.** Photos that aren't part of any active share link are automatically deleted after 30 days. Nothing lingers on the server forgotten.
+- **Photos are cleaned up automatically.** Photos that aren't part of any active share link are automatically deleted after a configurable number of days (default 30). Nothing lingers on the server forgotten.
 - **Download protection.** The gallery viewer prevents casual right-click saving and image dragging. (This won't stop a determined technical user, but it discourages casual copying.)
 - **No tracking by third parties.** Glimpse doesn't embed analytics scripts, social media pixels, or advertising trackers. The built-in analytics use IP hashing so even the server admin can't see the real IP addresses of viewers.
 - **Password-protected admin.** Only someone with the admin password can upload photos, create links, or view analytics. The login is rate-limited to prevent brute-force attacks.
@@ -168,6 +168,10 @@ SITE_URL=https://photos.example.com
 # Secret token for the cleanup endpoint (called by cron)
 CLEANUP_SECRET=another-random-secret
 
+# (Optional) Number of days before unlinked photos are eligible for cleanup
+# Defaults to 30 if not set
+CLEANUP_DAYS=30
+
 # (Optional) IANA timezone for displayed times, e.g. in OG previews
 # Defaults to the server timezone if not set
 DISPLAY_TIMEZONE=Europe/London
@@ -203,7 +207,7 @@ The production server runs on port 3000 by default. Use a reverse proxy (Nginx, 
 
 ### Photo Cleanup
 
-Glimpse includes an automatic cleanup endpoint that deletes photos older than 30 days that aren't part of any active share link. Set up a cron job to call it periodically:
+Glimpse includes an automatic cleanup endpoint that deletes photos older than `CLEANUP_DAYS` days (default 30) that aren't part of any active share link. Set up a cron job to call it periodically:
 
 ```bash
 # Run cleanup daily at 3 AM

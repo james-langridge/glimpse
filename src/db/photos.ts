@@ -54,9 +54,10 @@ export async function deletePhoto(id: string) {
 }
 
 export async function getPhotosForCleanup() {
+  const days = parseInt(process.env.CLEANUP_DAYS || "30", 10) || 30;
   const result = await sql<Photo>`
     SELECT p.* FROM photos p
-    WHERE p.uploaded_at <= NOW() - INTERVAL '30 days'
+    WHERE p.uploaded_at <= NOW() - MAKE_INTERVAL(days => ${days})
     AND NOT EXISTS (
       SELECT 1 FROM share_link_photos slp
       JOIN share_links sl ON sl.id = slp.share_link_id
