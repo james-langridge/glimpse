@@ -53,6 +53,9 @@ export default function LinkDetailPage() {
   const [expiryValue, setExpiryValue] = useState("");
   const [savingExpiry, setSavingExpiry] = useState(false);
   const [expiryError, setExpiryError] = useState("");
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
 
   const fetchLink = useCallback(async () => {
     try {
@@ -149,6 +152,29 @@ export default function LinkDetailPage() {
     }
   }
 
+  function startEditingTitle() {
+    if (!link) return;
+    setTitleValue(link.title ?? "");
+    setEditingTitle(true);
+  }
+
+  async function handleSaveTitle() {
+    setSavingTitle(true);
+    try {
+      const res = await fetch(`/api/links/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: titleValue }),
+      });
+      if (res.ok) {
+        setEditingTitle(false);
+        fetchLink();
+      }
+    } finally {
+      setSavingTitle(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -188,8 +214,46 @@ export default function LinkDetailPage() {
               {link.status}
             </span>
           </div>
-          {link.title && (
-            <p className="mt-1 text-sm text-zinc-400">{link.title}</p>
+          {editingTitle ? (
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="text"
+                value={titleValue}
+                onChange={(e) => setTitleValue(e.target.value)}
+                maxLength={255}
+                placeholder="Link title (optional)"
+                className="rounded bg-zinc-800 px-2 py-1 text-sm text-white placeholder:text-zinc-600"
+              />
+              <button
+                onClick={handleSaveTitle}
+                disabled={savingTitle}
+                className="rounded bg-white px-2 py-0.5 text-xs font-medium text-zinc-900 transition hover:bg-zinc-200 disabled:opacity-50"
+              >
+                {savingTitle ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={() => setEditingTitle(false)}
+                className="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300 transition hover:bg-zinc-700"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="mt-1 flex items-center gap-2">
+              {link.title ? (
+                <p className="text-sm text-zinc-400">{link.title}</p>
+              ) : (
+                <p className="text-sm text-zinc-600">No title</p>
+              )}
+              {link.status === "active" && (
+                <button
+                  onClick={startEditingTitle}
+                  className="text-xs text-zinc-500 transition hover:text-white"
+                >
+                  Edit
+                </button>
+              )}
+            </div>
           )}
         </div>
 

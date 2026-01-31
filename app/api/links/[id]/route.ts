@@ -49,7 +49,12 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { photoIds, expiresAt } = body;
+    const { photoIds, expiresAt, title } = body;
+
+    if (title !== undefined) {
+      const trimmed = typeof title === "string" ? title.trim() : null;
+      await updateLink(id, { title: trimmed || null });
+    }
 
     if (expiresAt) {
       const expiresDate = new Date(expiresAt);

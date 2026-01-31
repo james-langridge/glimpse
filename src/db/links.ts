@@ -55,12 +55,19 @@ export async function getLinkByCode(code: string) {
 
 export async function updateLink(
   id: string,
-  updates: { expires_at?: Date },
+  updates: { expires_at?: Date; title?: string | null },
 ) {
   if (updates.expires_at) {
     await sql`
       UPDATE share_links
       SET expires_at = ${updates.expires_at.toISOString()}, updated_at = NOW()
+      WHERE id = ${id}
+    `;
+  }
+  if (updates.title !== undefined) {
+    await sql`
+      UPDATE share_links
+      SET title = ${updates.title}, updated_at = NOW()
       WHERE id = ${id}
     `;
   }
