@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import BackLink from "@/src/components/BackLink";
 
 export const metadata: Metadata = {
   title: "About - Glimpse",
@@ -11,12 +12,9 @@ export default function About() {
     <div className="min-h-screen bg-zinc-950 text-zinc-300">
       <div className="mx-auto max-w-2xl px-6 py-16">
         <header className="mb-12">
-          <Link
-            href="/"
-            className="text-sm text-zinc-600 transition-colors hover:text-zinc-400"
-          >
+          <BackLink className="text-sm text-zinc-600 transition-colors hover:text-zinc-400">
             &larr; Back
-          </Link>
+          </BackLink>
           <h1 className="mt-6 text-3xl font-light tracking-widest text-white">
             GLIMPSE
           </h1>
@@ -146,12 +144,9 @@ export default function About() {
         </section>
 
         <footer className="mt-16 border-t border-zinc-800 pt-6 text-center text-sm text-zinc-600">
-          <Link
-            href="/"
-            className="transition-colors hover:text-zinc-400"
-          >
+          <BackLink className="transition-colors hover:text-zinc-400">
             &larr; Back to Glimpse
-          </Link>
+          </BackLink>
         </footer>
       </div>
     </div>
