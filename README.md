@@ -167,6 +167,10 @@ SITE_URL=https://photos.example.com
 
 # Secret token for the cleanup endpoint (called by cron)
 CLEANUP_SECRET=another-random-secret
+
+# (Optional) IANA timezone for displayed times, e.g. in OG previews
+# Defaults to the server timezone if not set
+DISPLAY_TIMEZONE=Europe/London
 ```
 
 ### Setup
@@ -263,6 +267,7 @@ docker run -d \
   -e PHOTO_STORAGE_PATH="/data/photos" \
   -e SITE_URL="https://photos.example.com" \
   -e CLEANUP_SECRET="your-cleanup-secret" \
+  -e DISPLAY_TIMEZONE="Europe/London" \
   glimpse
 ```
 

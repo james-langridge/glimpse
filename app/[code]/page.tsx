@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title =
     link.title || (photoCount === 1 ? "1 photo" : `${photoCount} photos`);
   const expiresAt = new Date(link.expires_at);
-  const description = `Link expires ${expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short" })}`;
+  const description = `Link expires ${expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short", ...(process.env.DISPLAY_TIMEZONE && { timeZone: process.env.DISPLAY_TIMEZONE }) })}`;
 
   return {
     title,
