@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface LinkItem {
   id: string;
@@ -61,6 +61,36 @@ function OpenButton({ code }: { code: string }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
       </svg>
     </a>
+  );
+}
+
+function ShareButton({ code, title }: { code: string; title: string | null }) {
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    setCanShare(typeof navigator.share === "function");
+  }, []);
+
+  if (!canShare) return null;
+
+  function handleShare() {
+    const url = `${window.location.origin}/${code}`;
+    navigator.share({
+      url,
+      ...(title ? { title, text: title } : { title: "Glimpse" }),
+    });
+  }
+
+  return (
+    <button
+      onClick={handleShare}
+      className="text-zinc-400 transition hover:text-white"
+      title="Share link"
+    >
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+      </svg>
+    </button>
   );
 }
 
@@ -167,6 +197,7 @@ function LinkCard({ link }: { link: LinkItem }) {
       <div className="mt-3 flex items-center gap-4 border-t border-zinc-800 pt-3">
         <CopyButton code={link.code} />
         <OpenButton code={link.code} />
+        <ShareButton code={link.code} title={link.title} />
         <Link
           href={`/admin/links/${link.id}`}
           className="ml-auto text-sm text-zinc-400 transition hover:text-white"
@@ -252,6 +283,7 @@ export default function LinkTable({ links }: LinkTableProps) {
                   <div className="flex items-center justify-end gap-3">
                     <CopyButton code={link.code} />
                     <OpenButton code={link.code} />
+                    <ShareButton code={link.code} title={link.title} />
                     <Link
                       href={`/admin/links/${link.id}`}
                       className="text-zinc-400 transition hover:text-white"
