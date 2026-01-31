@@ -10,6 +10,7 @@ interface LinkItem {
   expires_at: string;
   created_at: string;
   photo_count: number;
+  preview_photo_ids: string[];
 }
 
 interface LinkTableProps {
@@ -91,6 +92,33 @@ function timeUntil(dateStr: string): string {
   return `${minutes}m`;
 }
 
+function PhotoPreviews({
+  photoIds,
+  totalCount,
+}: {
+  photoIds: string[];
+  totalCount: number;
+}) {
+  if (photoIds.length === 0) return null;
+  const extra = totalCount - photoIds.length;
+  return (
+    <div className="flex items-center gap-1">
+      {photoIds.map((id) => (
+        <img
+          key={id}
+          src={`/api/photos/${id}/image?w=400`}
+          alt=""
+          className="h-8 w-8 rounded object-cover"
+          loading="lazy"
+        />
+      ))}
+      {extra > 0 && (
+        <span className="ml-1 text-xs text-zinc-500">+{extra}</span>
+      )}
+    </div>
+  );
+}
+
 function LinkCard({ link }: { link: LinkItem }) {
   return (
     <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
@@ -104,6 +132,14 @@ function LinkCard({ link }: { link: LinkItem }) {
           {link.status}
         </span>
       </div>
+      {link.preview_photo_ids.length > 0 && (
+        <div className="mt-3">
+          <PhotoPreviews
+            photoIds={link.preview_photo_ids}
+            totalCount={link.photo_count}
+          />
+        </div>
+      )}
       <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
         <div>
           <span className="text-zinc-500">Photos</span>
@@ -183,7 +219,13 @@ export default function LinkTable({ links }: LinkTableProps) {
                   </span>
                 </td>
                 <td className="py-3 pr-4 text-zinc-300">
-                  {link.photo_count}
+                  <div className="flex items-center gap-2">
+                    <PhotoPreviews
+                      photoIds={link.preview_photo_ids}
+                      totalCount={link.photo_count}
+                    />
+                    {link.preview_photo_ids.length === 0 && link.photo_count}
+                  </div>
                 </td>
                 <td className="py-3 pr-4 text-zinc-300">
                   {link.status === "active"

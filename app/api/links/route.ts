@@ -29,10 +29,25 @@ export async function GET(request: NextRequest) {
       countResult.rows.map((r) => [r.share_link_id, parseInt(r.count, 10)]),
     );
 
+    const previewResult = await query<{
+      share_link_id: string;
+      photo_id: string;
+      display_order: number;
+    }>(
+      "SELECT share_link_id, photo_id, display_order FROM share_link_photos ORDER BY display_order ASC",
+    );
+    const previewPhotos = new Map<string, string[]>();
+    for (const row of previewResult.rows) {
+      const ids = previewPhotos.get(row.share_link_id) ?? [];
+      if (ids.length < 4) ids.push(row.photo_id);
+      previewPhotos.set(row.share_link_id, ids);
+    }
+
     const linksWithCounts = links.map((link) => ({
       ...link,
       status: getLinkStatus(link),
       photo_count: photoCounts.get(link.id) ?? 0,
+      preview_photo_ids: previewPhotos.get(link.id) ?? [],
     }));
 
     return NextResponse.json({ links: linksWithCounts });

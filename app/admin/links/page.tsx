@@ -13,6 +13,7 @@ interface LinkItem {
   expires_at: string;
   created_at: string;
   photo_count: number;
+  preview_photo_ids: string[];
 }
 
 const tabs: { key: Status | "all"; label: string }[] = [
