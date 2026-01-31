@@ -29,6 +29,10 @@ export async function initializeDatabase() {
   `);
 
   await query(`
+    ALTER TABLE share_links ADD COLUMN IF NOT EXISTS title VARCHAR(255)
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS share_link_photos (
       share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE CASCADE,
       photo_id VARCHAR(8) REFERENCES photos(id) ON DELETE CASCADE,
