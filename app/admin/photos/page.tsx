@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import ImageUpload from "@/src/components/ImageUpload";
 import PhotoGrid from "@/src/components/PhotoGrid";
 
@@ -19,9 +20,26 @@ interface Photo {
 }
 
 export default function PhotosPage() {
+  return (
+    <Suspense>
+      <PhotosContent />
+    </Suspense>
+  );
+}
+
+function PhotosContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"grid" | "table">("grid");
+
+  const paramView = searchParams.get("view");
+  const view: "grid" | "table" =
+    paramView === "grid" || paramView === "table" ? paramView : "table";
+
+  function setView(v: "grid" | "table") {
+    router.replace(`/admin/photos?view=${v}`, { scroll: false });
+  }
 
   const fetchPhotos = useCallback(async () => {
     try {
