@@ -15,6 +15,7 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [error, setError] = useState<string | null>(null);
 
   async function processFile(file: File): Promise<Blob> {
     const canvas = canvasRef.current!;
@@ -46,11 +47,13 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
     if (!files || files.length === 0) return;
 
     setUploading(true);
+    setError(null);
     setProgress({ current: 0, total: files.length });
 
-    try {
-      const formData = new FormData();
+    let successCount = 0;
+    let lastError: string | null = null;
 
+    try {
       for (let i = 0; i < files.length; i++) {
         setProgress({ current: i + 1, total: files.length });
 
@@ -58,30 +61,52 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
         const needsResize =
           file.type === "image/png" || file.size > 4 * 1024 * 1024;
 
+        const formData = new FormData();
+
         if (needsResize) {
           const blob = await processFile(file);
           const dotIdx = file.name.lastIndexOf(".");
           const name =
             (dotIdx > 0 ? file.name.slice(0, dotIdx) : file.name) + ".jpg";
-          formData.append("photos", new File([blob], name, { type: "image/jpeg" }));
+          formData.append(
+            "photos",
+            new File([blob], name, { type: "image/jpeg" }),
+          );
         } else {
           formData.append("photos", file);
         }
+
+        const res = await fetch("/api/photos/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({ error: "Upload failed" }));
+          lastError = data.error ?? "Upload failed";
+        } else {
+          successCount++;
+        }
       }
 
-      const res = await fetch("/api/photos/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Upload failed");
+      if (successCount > 0) {
+        onUploadComplete();
       }
 
-      onUploadComplete();
+      if (lastError) {
+        const failCount = files.length - successCount;
+        setError(
+          failCount === files.length
+            ? `Upload failed: ${lastError}`
+            : `${failCount} of ${files.length} photos failed to upload`,
+        );
+      }
     } catch (err) {
       console.error("Upload error:", err);
+      setError(err instanceof Error ? err.message : "Upload failed");
+      if (successCount > 0) {
+        onUploadComplete();
+      }
     } finally {
       setUploading(false);
       setProgress({ current: 0, total: 0 });
@@ -100,7 +125,7 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
       >
         {uploading
           ? progress.total > 1
-            ? `Processing ${progress.current}/${progress.total}...`
+            ? `Uploading ${progress.current}/${progress.total}...`
             : "Uploading..."
           : "Upload photos"}
         <input
@@ -114,6 +139,7 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
         />
       </label>
       <canvas ref={canvasRef} className="hidden" />
+      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
     </div>
   );
 }
