@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 
 interface LinkItem {
@@ -18,15 +18,38 @@ interface LinkTableProps {
   links: LinkItem[];
 }
 
-function CopyButton({ code }: { code: string }) {
+function CopyButton({
+  code,
+  children,
+}: {
+  code: string;
+  children?: React.ReactNode;
+}) {
   const [copied, setCopied] = useState(false);
 
-  function handleCopy() {
+  function handleCopy(e: React.MouseEvent) {
+    e.stopPropagation();
     const url = `${window.location.origin}/${code}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  if (children) {
+    return (
+      <button
+        onClick={handleCopy}
+        className="cursor-pointer transition"
+        title="Copy share link"
+      >
+        {copied ? (
+          <span className="text-emerald-400">Copied!</span>
+        ) : (
+          children
+        )}
+      </button>
+    );
   }
 
   return (
@@ -54,6 +77,7 @@ function OpenButton({ code }: { code: string }) {
       href={`/${code}`}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
       className="text-zinc-400 transition hover:text-white"
       title="Open share link"
     >
@@ -73,7 +97,8 @@ function ShareButton({ code, title }: { code: string; title: string | null }) {
 
   if (!canShare) return null;
 
-  function handleShare() {
+  function handleShare(e: React.MouseEvent) {
+    e.stopPropagation();
     const url = `${window.location.origin}/${code}`;
     navigator.share({
       url,
@@ -186,13 +211,20 @@ function PhotoPreviews({
 }
 
 function LinkCard({ link }: { link: LinkItem }) {
+  const router = useRouter();
+
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+    <div
+      className="cursor-pointer rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 transition hover:border-zinc-700"
+      onClick={() => router.push(`/admin/links/${link.id}`)}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
-            {link.code}
-          </code>
+          <CopyButton code={link.code}>
+            <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white hover:bg-zinc-700">
+              {link.code}
+            </code>
+          </CopyButton>
           {link.title && (
             <span className="truncate text-sm text-zinc-400">{link.title}</span>
           )}
@@ -233,18 +265,13 @@ function LinkCard({ link }: { link: LinkItem }) {
         <CopyButton code={link.code} />
         <OpenButton code={link.code} />
         <ShareButton code={link.code} title={link.title} />
-        <Link
-          href={`/admin/links/${link.id}`}
-          className="ml-auto text-sm text-zinc-400 transition hover:text-white"
-        >
-          Edit
-        </Link>
       </div>
     </div>
   );
 }
 
 export default function LinkTable({ links }: LinkTableProps) {
+  const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey>("created");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -308,12 +335,18 @@ export default function LinkTable({ links }: LinkTableProps) {
           </thead>
           <tbody>
             {sorted.map((link) => (
-              <tr key={link.id} className="border-b border-zinc-800/50">
+              <tr
+                key={link.id}
+                className="cursor-pointer border-b border-zinc-800/50 transition hover:bg-zinc-800/50"
+                onClick={() => router.push(`/admin/links/${link.id}`)}
+              >
                 <td className="py-3 pr-4">
                   <div className="flex items-center gap-2">
-                    <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
-                      {link.code}
-                    </code>
+                    <CopyButton code={link.code}>
+                      <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white hover:bg-zinc-700">
+                        {link.code}
+                      </code>
+                    </CopyButton>
                     {link.title && (
                       <span className="truncate text-sm text-zinc-400">
                         {link.title}
@@ -350,12 +383,6 @@ export default function LinkTable({ links }: LinkTableProps) {
                     <CopyButton code={link.code} />
                     <OpenButton code={link.code} />
                     <ShareButton code={link.code} title={link.title} />
-                    <Link
-                      href={`/admin/links/${link.id}`}
-                      className="text-zinc-400 transition hover:text-white"
-                    >
-                      Edit
-                    </Link>
                   </div>
                 </td>
               </tr>

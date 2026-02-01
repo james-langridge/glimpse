@@ -189,7 +189,11 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
           </thead>
           <tbody>
             {sorted.map((photo) => (
-              <tr key={photo.id} className="border-b border-zinc-800/50">
+              <tr
+                key={photo.id}
+                className="cursor-pointer border-b border-zinc-800/50 transition hover:bg-zinc-800/50"
+                onClick={() => router.push(`/admin/photos/${photo.id}`)}
+              >
                 <td className="py-2 pr-4">
                   <img
                     src={`/api/photos/${photo.id}/image?w=400`}
@@ -199,12 +203,9 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
                   />
                 </td>
                 <td className="py-2 pr-4 text-zinc-300">
-                  <button
-                    onClick={() => router.push(`/admin/photos/${photo.id}`)}
-                    className="line-clamp-1 text-left transition hover:text-white hover:underline"
-                  >
+                  <span className="line-clamp-1">
                     {photo.original_name ?? photo.filename}
-                  </button>
+                  </span>
                 </td>
                 <td className="py-2 pr-4 text-zinc-400">
                   {formatDimensions(photo.width, photo.height)}
@@ -222,21 +223,16 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
                   {formatDate(photo.uploaded_at)}
                 </td>
                 <td className="py-2">
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => router.push(`/admin/photos/${photo.id}`)}
-                      className="rounded bg-zinc-700/80 px-2 py-1 text-xs font-medium text-white hover:bg-zinc-600"
-                    >
-                      Details
-                    </button>
-                    <button
-                      onClick={() => handleDelete(photo.id)}
-                      disabled={deleting === photo.id}
-                      className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
-                    >
-                      {deleting === photo.id ? "..." : "Delete"}
-                    </button>
-                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(photo.id);
+                    }}
+                    disabled={deleting === photo.id}
+                    className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {deleting === photo.id ? "..." : "Delete"}
+                  </button>
                 </td>
               </tr>
             ))}
