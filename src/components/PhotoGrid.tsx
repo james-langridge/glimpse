@@ -222,13 +222,21 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
                   {formatDate(photo.uploaded_at)}
                 </td>
                 <td className="py-2">
-                  <button
-                    onClick={() => handleDelete(photo.id)}
-                    disabled={deleting === photo.id}
-                    className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
-                  >
-                    {deleting === photo.id ? "..." : "Delete"}
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => router.push(`/admin/photos/${photo.id}`)}
+                      className="rounded bg-zinc-700/80 px-2 py-1 text-xs font-medium text-white hover:bg-zinc-600"
+                    >
+                      Details
+                    </button>
+                    <button
+                      onClick={() => handleDelete(photo.id)}
+                      disabled={deleting === photo.id}
+                      className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                    >
+                      {deleting === photo.id ? "..." : "Delete"}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
