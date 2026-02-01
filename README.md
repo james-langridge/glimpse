@@ -36,7 +36,7 @@ Unlike sharing photos through social media, messaging apps, or cloud storage ser
 
 The admin panel lets you:
 
-- **Upload and manage a pool of photos**
+- **Upload and manage a pool of photos** — see view counts and link usage at a glance, and drill into per-photo detail pages showing which links include each photo
 
 ![Photo management](public/photos.png)
 
@@ -115,13 +115,15 @@ All foreign keys use `ON DELETE CASCADE`.
 |--------|------|---------|
 | POST | `/api/auth/login` | Authenticate with admin password |
 | POST | `/api/auth/logout` | End session |
-| GET | `/api/photos` | List all photos |
+| GET | `/api/photos` | List all photos (with view/link counts) |
 | POST | `/api/photos/upload` | Upload photos (multipart form data) |
+| GET | `/api/photos/[id]/detail` | Photo detail (metadata, links, view stats) |
 | DELETE | `/api/photos/[id]` | Delete a photo |
 | GET/POST | `/api/links` | List links / Create a link |
-| PUT | `/api/links/[id]` | Update link expiry |
+| GET | `/api/links/[id]` | Link detail (metadata, photos) |
+| PUT | `/api/links/[id]` | Update link (expiry, title, photos) |
 | DELETE | `/api/links/[id]` | Delete a link |
-| POST | `/api/links/[id]/revoke` | Revoke a link |
+| PATCH | `/api/links/[id]/revoke` | Revoke a link |
 | GET | `/api/analytics` | Fetch analytics data |
 
 **System:**
