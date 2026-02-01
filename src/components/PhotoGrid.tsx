@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface Photo {
   id: string;
@@ -45,9 +45,59 @@ function formatDimensions(
   return `${width}×${height}`;
 }
 
+type SortKey = "filename" | "dimensions" | "size" | "uploaded";
+type SortDir = "asc" | "desc";
+
+function comparePhotos(a: Photo, b: Photo, key: SortKey): number {
+  switch (key) {
+    case "filename": {
+      const aName = a.original_name ?? a.filename;
+      const bName = b.original_name ?? b.filename;
+      return aName.localeCompare(bName);
+    }
+    case "dimensions":
+      return ((a.width ?? 0) * (a.height ?? 0)) - ((b.width ?? 0) * (b.height ?? 0));
+    case "size":
+      return (a.file_size ?? 0) - (b.file_size ?? 0);
+    case "uploaded":
+      return new Date(a.uploaded_at).getTime() - new Date(b.uploaded_at).getTime();
+  }
+}
+
+function SortIcon({ direction }: { direction: SortDir | null }) {
+  return (
+    <svg className="ml-1 inline h-3 w-3" viewBox="0 0 10 14" fill="currentColor">
+      <path
+        d="M5 0L9 5H1L5 0Z"
+        className={direction === "asc" ? "text-white" : "text-zinc-600"}
+      />
+      <path
+        d="M5 14L1 9H9L5 14Z"
+        className={direction === "desc" ? "text-white" : "text-zinc-600"}
+      />
+    </svg>
+  );
+}
+
 export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("uploaded");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir(key === "filename" ? "asc" : "desc");
+    }
+  }
+
+  const sorted = useMemo(() => {
+    const multiplier = sortDir === "asc" ? 1 : -1;
+    return [...photos].sort((a, b) => multiplier * comparePhotos(a, b, sortKey));
+  }, [photos, sortKey, sortDir]);
 
   useEffect(() => {
     if (!activeId) return;
@@ -99,6 +149,13 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
     );
   }
 
+  const columns: { key: SortKey; label: string }[] = [
+    { key: "filename", label: "Filename" },
+    { key: "dimensions", label: "Dimensions" },
+    { key: "size", label: "Size" },
+    { key: "uploaded", label: "Uploaded" },
+  ];
+
   if (view === "table") {
     return (
       <div className="overflow-x-auto">
@@ -106,15 +163,22 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
           <thead>
             <tr className="border-b border-zinc-800 text-zinc-400">
               <th className="pb-3 pr-4 font-medium"></th>
-              <th className="pb-3 pr-4 font-medium">Filename</th>
-              <th className="pb-3 pr-4 font-medium">Dimensions</th>
-              <th className="pb-3 pr-4 font-medium">Size</th>
-              <th className="pb-3 pr-4 font-medium">Uploaded</th>
+              {columns.map((col) => (
+                <th key={col.key} className="pb-3 pr-4 font-medium">
+                  <button
+                    onClick={() => handleSort(col.key)}
+                    className="inline-flex items-center transition hover:text-white"
+                  >
+                    {col.label}
+                    <SortIcon direction={sortKey === col.key ? sortDir : null} />
+                  </button>
+                </th>
+              ))}
               <th className="pb-3 font-medium"></th>
             </tr>
           </thead>
           <tbody>
-            {photos.map((photo) => (
+            {sorted.map((photo) => (
               <tr key={photo.id} className="border-b border-zinc-800/50">
                 <td className="py-2 pr-4">
                   <img
@@ -157,7 +221,7 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-      {photos.map((photo) => {
+      {sorted.map((photo) => {
         const isActive = activeId === photo.id;
         return (
           <div
