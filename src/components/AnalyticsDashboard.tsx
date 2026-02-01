@@ -465,7 +465,7 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* Per-Link Stats */}
-      <div className="rounded-lg bg-zinc-900 p-4">
+      {!selectedLink && <div className="rounded-lg bg-zinc-900 p-4">
         <h3 className="mb-4 text-sm font-medium text-zinc-300">
           Per-Link Stats
         </h3>
@@ -524,7 +524,7 @@ export default function AnalyticsDashboard() {
             No links yet
           </p>
         )}
-      </div>
+      </div>}
 
       {/* Recent Views */}
       <div className="rounded-lg bg-zinc-900 p-4">
