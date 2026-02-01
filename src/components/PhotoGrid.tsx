@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Photo {
   id: string;
@@ -12,6 +13,8 @@ interface Photo {
   blur_data: string | null;
   file_size: number | null;
   uploaded_at: string;
+  view_count: number;
+  link_count: number;
 }
 
 interface PhotoGridProps {
@@ -45,7 +48,7 @@ function formatDimensions(
   return `${width}×${height}`;
 }
 
-type SortKey = "filename" | "dimensions" | "size" | "uploaded";
+type SortKey = "filename" | "dimensions" | "size" | "uploaded" | "views" | "links";
 type SortDir = "asc" | "desc";
 
 function comparePhotos(a: Photo, b: Photo, key: SortKey): number {
@@ -61,6 +64,10 @@ function comparePhotos(a: Photo, b: Photo, key: SortKey): number {
       return (a.file_size ?? 0) - (b.file_size ?? 0);
     case "uploaded":
       return new Date(a.uploaded_at).getTime() - new Date(b.uploaded_at).getTime();
+    case "views":
+      return a.view_count - b.view_count;
+    case "links":
+      return a.link_count - b.link_count;
   }
 }
 
@@ -80,6 +87,7 @@ function SortIcon({ direction }: { direction: SortDir | null }) {
 }
 
 export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
+  const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("uploaded");
@@ -153,6 +161,8 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
     { key: "filename", label: "Filename" },
     { key: "dimensions", label: "Dimensions" },
     { key: "size", label: "Size" },
+    { key: "views", label: "Views" },
+    { key: "links", label: "Links" },
     { key: "uploaded", label: "Uploaded" },
   ];
 
@@ -189,15 +199,24 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
                   />
                 </td>
                 <td className="py-2 pr-4 text-zinc-300">
-                  <span className="line-clamp-1">
+                  <button
+                    onClick={() => router.push(`/admin/photos/${photo.id}`)}
+                    className="line-clamp-1 text-left transition hover:text-white hover:underline"
+                  >
                     {photo.original_name ?? photo.filename}
-                  </span>
+                  </button>
                 </td>
                 <td className="py-2 pr-4 text-zinc-400">
                   {formatDimensions(photo.width, photo.height)}
                 </td>
                 <td className="py-2 pr-4 text-zinc-400">
                   {formatBytes(photo.file_size)}
+                </td>
+                <td className="py-2 pr-4 text-zinc-400">
+                  {photo.view_count}
+                </td>
+                <td className="py-2 pr-4 text-zinc-400">
+                  {photo.link_count}
                 </td>
                 <td className="py-2 pr-4 text-zinc-400">
                   {formatDate(photo.uploaded_at)}
@@ -270,16 +289,27 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
                     .join(" · ")}
                 </p>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(photo.id);
-                }}
-                disabled={deleting === photo.id}
-                className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
-              >
-                {deleting === photo.id ? "..." : "Delete"}
-              </button>
+              <div className="flex gap-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/admin/photos/${photo.id}`);
+                  }}
+                  className="rounded bg-zinc-700/80 px-2 py-1 text-xs font-medium text-white hover:bg-zinc-600"
+                >
+                  Details
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(photo.id);
+                  }}
+                  disabled={deleting === photo.id}
+                  className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                >
+                  {deleting === photo.id ? "..." : "Delete"}
+                </button>
+              </div>
             </div>
           </div>
         );

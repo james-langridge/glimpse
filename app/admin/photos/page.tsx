@@ -14,6 +14,8 @@ interface Photo {
   blur_data: string | null;
   file_size: number | null;
   uploaded_at: string;
+  view_count: number;
+  link_count: number;
 }
 
 export default function PhotosPage() {

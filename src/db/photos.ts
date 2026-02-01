@@ -69,6 +69,64 @@ export async function getPhotosForCleanup() {
   return result.rows;
 }
 
+export interface PhotoWithStats extends Photo {
+  view_count: number;
+  link_count: number;
+}
+
+export async function getAllPhotosWithStats() {
+  const result = await sql<
+    Photo & { view_count: string; link_count: string }
+  >`
+    SELECT p.*,
+      COUNT(DISTINCT lv.id)::text AS view_count,
+      COUNT(DISTINCT slp.share_link_id)::text AS link_count
+    FROM photos p
+    LEFT JOIN share_link_photos slp ON slp.photo_id = p.id
+    LEFT JOIN link_views lv ON lv.share_link_id = slp.share_link_id
+    GROUP BY p.id
+    ORDER BY p.uploaded_at DESC
+  `;
+  return result.rows.map((row) => ({
+    ...row,
+    view_count: parseInt(row.view_count, 10),
+    link_count: parseInt(row.link_count, 10),
+  }));
+}
+
+export async function getLinksForPhoto(photoId: string) {
+  const result = await sql<{
+    id: string;
+    code: string;
+    title: string | null;
+    expires_at: Date;
+    revoked: boolean;
+    created_at: Date;
+  }>`
+    SELECT sl.id, sl.code, sl.title, sl.expires_at, sl.revoked, sl.created_at
+    FROM share_links sl
+    JOIN share_link_photos slp ON slp.share_link_id = sl.id
+    WHERE slp.photo_id = ${photoId}
+    ORDER BY sl.created_at DESC
+  `;
+  return result.rows;
+}
+
+export async function getViewCountForPhoto(photoId: string) {
+  const result = await sql<{ total_views: string; unique_visitors: string }>`
+    SELECT
+      COUNT(lv.id)::text AS total_views,
+      COUNT(DISTINCT lv.ip_hash)::text AS unique_visitors
+    FROM link_views lv
+    JOIN share_link_photos slp ON slp.share_link_id = lv.share_link_id
+    WHERE slp.photo_id = ${photoId}
+  `;
+  return {
+    total_views: parseInt(result.rows[0].total_views, 10),
+    unique_visitors: parseInt(result.rows[0].unique_visitors, 10),
+  };
+}
+
 export async function getPhotoCount() {
   const result = await sql<{ count: string }>`
     SELECT COUNT(*) as count FROM photos

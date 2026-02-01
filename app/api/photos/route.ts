@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAllPhotos } from "@/src/db/photos";
+import { getAllPhotosWithStats } from "@/src/db/photos";
 
 export async function GET() {
   try {
-    const photos = await getAllPhotos();
+    const photos = await getAllPhotosWithStats();
     return NextResponse.json({ photos });
   } catch (e) {
     console.error("Failed to fetch photos:", e);
