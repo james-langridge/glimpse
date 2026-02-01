@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -122,12 +122,114 @@ const statusColors: Record<string, string> = {
   revoked: "bg-red-500/20 text-red-400",
 };
 
+type SortDir = "asc" | "desc";
+
+function SortIcon({ direction }: { direction: SortDir | null }) {
+  return (
+    <svg className="ml-1 inline h-3 w-3" viewBox="0 0 10 14" fill="currentColor">
+      <path
+        d="M5 0L9 5H1L5 0Z"
+        className={direction === "asc" ? "text-white" : "text-zinc-600"}
+      />
+      <path
+        d="M5 14L1 9H9L5 14Z"
+        className={direction === "desc" ? "text-white" : "text-zinc-600"}
+      />
+    </svg>
+  );
+}
+
+function useTableSort<K extends string>(
+  defaultKey: K,
+  defaultDir: SortDir,
+  stringKeys: K[],
+) {
+  const [sortKey, setSortKey] = useState<K>(defaultKey);
+  const [sortDir, setSortDir] = useState<SortDir>(defaultDir);
+
+  function handleSort(key: K) {
+    if (sortKey === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir(stringKeys.includes(key) ? "asc" : "desc");
+    }
+  }
+
+  return { sortKey, sortDir, handleSort } as const;
+}
+
+function sortedBy<T, K extends string>(
+  items: T[],
+  sortKey: K,
+  sortDir: SortDir,
+  compareFn: (a: T, b: T, key: K) => number,
+): T[] {
+  const multiplier = sortDir === "asc" ? 1 : -1;
+  return [...items].sort((a, b) => multiplier * compareFn(a, b, sortKey));
+}
+
+type GeoSortKey = "country" | "city" | "views";
+
+function compareGeo(a: GeoBreakdown, b: GeoBreakdown, key: GeoSortKey): number {
+  switch (key) {
+    case "country":
+      return a.country.localeCompare(b.country);
+    case "city":
+      return a.city.localeCompare(b.city);
+    case "views":
+      return a.count - b.count;
+  }
+}
+
+type LinkSortKey = "code" | "status" | "views" | "unique";
+
+const linkStatusOrder: Record<string, number> = { active: 0, expired: 1, revoked: 2 };
+
+function compareLinkStat(a: PerLinkStat, b: PerLinkStat, key: LinkSortKey): number {
+  switch (key) {
+    case "code":
+      return a.code.localeCompare(b.code);
+    case "status":
+      return (linkStatusOrder[getLinkStatus(a)] ?? 3) - (linkStatusOrder[getLinkStatus(b)] ?? 3);
+    case "views":
+      return a.views - b.views;
+    case "unique":
+      return a.unique_visitors - b.unique_visitors;
+  }
+}
+
+type RecentSortKey = "time" | "code" | "location" | "device" | "browser" | "duration";
+
+function compareRecent(a: RecentView, b: RecentView, key: RecentSortKey): number {
+  switch (key) {
+    case "time":
+      return new Date(a.viewed_at).getTime() - new Date(b.viewed_at).getTime();
+    case "code":
+      return a.code.localeCompare(b.code);
+    case "location": {
+      const aLoc = [a.city, a.country].filter(Boolean).join(", ");
+      const bLoc = [b.city, b.country].filter(Boolean).join(", ");
+      return aLoc.localeCompare(bLoc);
+    }
+    case "device":
+      return (a.device_type ?? "").localeCompare(b.device_type ?? "");
+    case "browser":
+      return (a.browser ?? "").localeCompare(b.browser ?? "");
+    case "duration":
+      return (a.session_duration_ms ?? 0) - (b.session_duration_ms ?? 0);
+  }
+}
+
 export default function AnalyticsDashboard() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [days, setDays] = useState(30);
   const [linkId, setLinkId] = useState<string>("");
+  const geoSort = useTableSort<GeoSortKey>("views", "desc", ["country", "city"]);
+  const linkSort = useTableSort<LinkSortKey>("views", "desc", ["code"]);
+  const recentSort = useTableSort<RecentSortKey>("time", "desc", ["code", "location", "device", "browser"]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -151,6 +253,19 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const sortedGeo = useMemo(
+    () => data ? sortedBy(data.geo.slice(0, 20), geoSort.sortKey, geoSort.sortDir, compareGeo) : [],
+    [data, geoSort.sortKey, geoSort.sortDir],
+  );
+  const sortedLinks = useMemo(
+    () => data ? sortedBy(data.perLink, linkSort.sortKey, linkSort.sortDir, compareLinkStat) : [],
+    [data, linkSort.sortKey, linkSort.sortDir],
+  );
+  const sortedRecent = useMemo(
+    () => data ? sortedBy(data.recent, recentSort.sortKey, recentSort.sortDir, compareRecent) : [],
+    [data, recentSort.sortKey, recentSort.sortDir],
+  );
 
   if (loading && !data) {
     return (
@@ -441,13 +556,25 @@ export default function AnalyticsDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-800 text-left text-zinc-400">
-                  <th className="pb-2 font-medium">Country</th>
-                  <th className="pb-2 font-medium">City</th>
-                  <th className="pb-2 text-right font-medium">Views</th>
+                  {([
+                    { key: "country" as const, label: "Country", align: "text-left" },
+                    { key: "city" as const, label: "City", align: "text-left" },
+                    { key: "views" as const, label: "Views", align: "text-right" },
+                  ]).map((col) => (
+                    <th key={col.key} className={`pb-2 font-medium ${col.align}`}>
+                      <button
+                        onClick={() => geoSort.handleSort(col.key)}
+                        className="inline-flex items-center transition hover:text-white"
+                      >
+                        {col.label}
+                        <SortIcon direction={geoSort.sortKey === col.key ? geoSort.sortDir : null} />
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {data.geo.slice(0, 20).map((row, i) => (
+                {sortedGeo.map((row, i) => (
                   <tr key={i} className="border-b border-zinc-800/50">
                     <td className="py-2 text-zinc-200">{row.country}</td>
                     <td className="py-2 text-zinc-400">{row.city}</td>
@@ -474,14 +601,26 @@ export default function AnalyticsDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-800 text-left text-zinc-400">
-                  <th className="pb-2 font-medium">Code</th>
-                  <th className="pb-2 font-medium">Status</th>
-                  <th className="pb-2 text-right font-medium">Views</th>
-                  <th className="pb-2 text-right font-medium">Unique</th>
+                  {([
+                    { key: "code" as const, label: "Code", align: "text-left" },
+                    { key: "status" as const, label: "Status", align: "text-left" },
+                    { key: "views" as const, label: "Views", align: "text-right" },
+                    { key: "unique" as const, label: "Unique", align: "text-right" },
+                  ]).map((col) => (
+                    <th key={col.key} className={`pb-2 font-medium ${col.align}`}>
+                      <button
+                        onClick={() => linkSort.handleSort(col.key)}
+                        className="inline-flex items-center transition hover:text-white"
+                      >
+                        {col.label}
+                        <SortIcon direction={linkSort.sortKey === col.key ? linkSort.sortDir : null} />
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {data.perLink.map((link) => {
+                {sortedLinks.map((link) => {
                   const status = getLinkStatus(link);
                   return (
                     <tr
@@ -536,16 +675,28 @@ export default function AnalyticsDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-800 text-left text-zinc-400">
-                  <th className="pb-2 font-medium">Time</th>
-                  <th className="pb-2 font-medium">Code</th>
-                  <th className="pb-2 font-medium">Location</th>
-                  <th className="pb-2 font-medium">Device</th>
-                  <th className="pb-2 font-medium">Browser</th>
-                  <th className="pb-2 text-right font-medium">Duration</th>
+                  {([
+                    { key: "time" as const, label: "Time", align: "text-left" },
+                    { key: "code" as const, label: "Code", align: "text-left" },
+                    { key: "location" as const, label: "Location", align: "text-left" },
+                    { key: "device" as const, label: "Device", align: "text-left" },
+                    { key: "browser" as const, label: "Browser", align: "text-left" },
+                    { key: "duration" as const, label: "Duration", align: "text-right" },
+                  ]).map((col) => (
+                    <th key={col.key} className={`pb-2 font-medium ${col.align}`}>
+                      <button
+                        onClick={() => recentSort.handleSort(col.key)}
+                        className="inline-flex items-center transition hover:text-white"
+                      >
+                        {col.label}
+                        <SortIcon direction={recentSort.sortKey === col.key ? recentSort.sortDir : null} />
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {data.recent.map((view) => (
+                {sortedRecent.map((view) => (
                   <tr
                     key={view.id}
                     className="border-b border-zinc-800/50"
