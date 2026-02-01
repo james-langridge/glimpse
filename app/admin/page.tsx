@@ -86,34 +86,47 @@ export default async function AdminPage() {
             </Link>
           </div>
           {recentViews.length > 0 ? (
-            <div className="space-y-3">
-              {recentViews.map((view) => (
-                <div
-                  key={view.id}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-zinc-200">
-                      {view.code}
-                    </span>
-                    <span className="text-zinc-500">
-                      {[view.city, view.country]
-                        .filter(Boolean)
-                        .join(", ") || "Unknown location"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {view.session_duration_ms && (
-                      <span className="text-zinc-500">
-                        {formatDuration(view.session_duration_ms)}
-                      </span>
-                    )}
-                    <span className="text-zinc-600">
-                      {formatDateTime(String(view.viewed_at))}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-800 text-zinc-400">
+                    <th className="pb-2 font-medium">Code</th>
+                    <th className="pb-2 font-medium">Location</th>
+                    <th className="pb-2 font-medium">Device</th>
+                    <th className="pb-2 font-medium">Browser</th>
+                    <th className="pb-2 text-right font-medium">Duration</th>
+                    <th className="pb-2 text-right font-medium">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentViews.map((view) => (
+                    <tr key={view.id} className="border-b border-zinc-800/50">
+                      <td className="py-2 pr-4 font-mono text-zinc-200">
+                        {view.code}
+                      </td>
+                      <td className="py-2 pr-4 text-zinc-400">
+                        {[view.city, view.country]
+                          .filter(Boolean)
+                          .join(", ") || "-"}
+                      </td>
+                      <td className="py-2 pr-4 capitalize text-zinc-400">
+                        {view.device_type ?? "-"}
+                      </td>
+                      <td className="py-2 pr-4 text-zinc-400">
+                        {[view.browser, view.os].filter(Boolean).join(" / ") || "-"}
+                      </td>
+                      <td className="py-2 pr-4 text-right text-zinc-500">
+                        {view.session_duration_ms
+                          ? formatDuration(view.session_duration_ms)
+                          : "-"}
+                      </td>
+                      <td className="py-2 text-right text-zinc-600">
+                        {formatDateTime(String(view.viewed_at))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <p className="py-4 text-center text-sm text-zinc-500">
