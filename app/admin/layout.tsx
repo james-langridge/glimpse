@@ -66,7 +66,7 @@ export default function AdminLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed z-50 flex h-full w-52 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950 transition-transform md:static md:translate-x-0 ${
+        className={`fixed z-50 flex h-full w-52 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950 transition-transform md:sticky md:top-0 md:h-screen md:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
