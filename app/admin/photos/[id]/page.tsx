@@ -128,7 +128,7 @@ export default function PhotoDetailPage() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <button
-            onClick={() => router.push("/admin/photos")}
+            onClick={() => router.back()}
             className="mb-4 text-sm text-zinc-400 transition hover:text-white"
           >
             &larr; Back to photos

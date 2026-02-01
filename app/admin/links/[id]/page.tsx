@@ -382,7 +382,8 @@ export default function LinkDetailPage() {
               {link.photos.map((photo, i) => (
                 <div
                   key={photo.id}
-                  className="relative overflow-hidden rounded-lg"
+                  className="relative cursor-pointer overflow-hidden rounded-lg transition hover:ring-2 hover:ring-zinc-600"
+                  onClick={() => router.push(`/admin/photos/${photo.id}`)}
                 >
                   <div
                     className="relative"
