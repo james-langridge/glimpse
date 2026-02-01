@@ -674,7 +674,10 @@ export default function AnalyticsDashboard() {
                   return (
                     <tr
                       key={link.share_link_id}
-                      className="border-b border-zinc-800/50"
+                      className="cursor-pointer border-b border-zinc-800/50 transition hover:bg-zinc-800/50"
+                      onClick={() =>
+                        router.push(`/admin/links/${link.share_link_id}`)
+                      }
                     >
                       <td className="py-2">
                         <div className="flex items-center gap-2">
