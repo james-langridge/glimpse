@@ -2,6 +2,8 @@
 
 Temporary, secure photo sharing. Upload photos, create a short link, share it with someone, and it expires on your schedule. No accounts needed for viewers. No cloud photo services snooping on your images. Just a simple, private way to share photos with the people you choose.
 
+![Glimpse admin dashboard](public/dashboard.png)
+
 ## What is Glimpse?
 
 Glimpse is a self-hosted photo sharing app designed for one thing: letting you share photos privately and temporarily.
@@ -34,11 +36,17 @@ Unlike sharing photos through social media, messaging apps, or cloud storage ser
 
 The admin panel lets you:
 
-- Upload and manage a pool of photos
-- Create share links with selected photos and an expiry date
-- See all active, expired, and revoked links at a glance
-- Revoke or delete links
-- View analytics: how many times a link was viewed, from which countries, what devices, and how long people spent looking
+- **Upload and manage a pool of photos**
+
+![Photo management](public/photos.png)
+
+- **Create share links** with selected photos and an expiry date, and **see all active, expired, and revoked links** at a glance. Revoke or delete links at any time.
+
+![Link management](public/links.png)
+
+- **View analytics**: how many times a link was viewed, from which countries, what devices, and how long people spent looking
+
+![Analytics](public/analytics.png)
 
 ---
 
