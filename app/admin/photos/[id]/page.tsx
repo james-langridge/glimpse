@@ -131,7 +131,7 @@ export default function PhotoDetailPage() {
             onClick={() => router.back()}
             className="mb-4 text-sm text-zinc-400 transition hover:text-white"
           >
-            &larr; Back to photos
+            &larr; Back
           </button>
 
           <h1 className="text-2xl font-light tracking-wide text-white">

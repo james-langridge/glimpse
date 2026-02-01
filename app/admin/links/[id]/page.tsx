@@ -198,10 +198,10 @@ export default function LinkDetailPage() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <button
-            onClick={() => router.push("/admin/links")}
+            onClick={() => router.back()}
             className="mb-4 text-sm text-zinc-400 transition hover:text-white"
           >
-            &larr; Back to links
+            &larr; Back
           </button>
 
           <div className="flex items-center gap-4">

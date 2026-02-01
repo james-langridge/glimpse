@@ -77,10 +77,10 @@ export default function NewLinkPage() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <button
-            onClick={() => router.push("/admin/links")}
+            onClick={() => router.back()}
             className="mb-4 text-sm text-zinc-400 transition hover:text-white"
           >
-            &larr; Back to links
+            &larr; Back
           </button>
           <h1 className="text-2xl font-light tracking-widest text-white">
             CREATE LINK
