@@ -46,10 +46,13 @@ interface GeoBreakdown {
 interface PerLinkStat {
   share_link_id: string;
   code: string;
+  title: string | null;
   revoked: boolean;
   expires_at: string;
   views: number;
   unique_visitors: number;
+  photo_count: number;
+  preview_photo_ids: string[];
 }
 
 interface RecentView {
@@ -167,6 +170,10 @@ export default function AnalyticsDashboard() {
 
   if (!data) return null;
 
+  const selectedLink = linkId
+    ? data.perLink.find((l) => l.share_link_id === linkId)
+    : null;
+
   return (
     <div className="space-y-8">
       {/* Filters */}
@@ -194,7 +201,8 @@ export default function AnalyticsDashboard() {
           <option value="">All links</option>
           {data.perLink.map((link) => (
             <option key={link.share_link_id} value={link.share_link_id}>
-              {link.code} ({getLinkStatus(link)})
+              {link.code}
+              {link.title ? ` — ${link.title}` : ""} ({getLinkStatus(link)})
             </option>
           ))}
         </select>
@@ -202,6 +210,49 @@ export default function AnalyticsDashboard() {
           <div className="h-4 w-4 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
         )}
       </div>
+
+      {/* Selected Link Preview */}
+      {selectedLink && (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+          <div className="flex items-center gap-3">
+            <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white">
+              {selectedLink.code}
+            </code>
+            {selectedLink.title && (
+              <span className="text-sm text-zinc-300">
+                {selectedLink.title}
+              </span>
+            )}
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[getLinkStatus(selectedLink)]}`}
+            >
+              {getLinkStatus(selectedLink)}
+            </span>
+          </div>
+          {selectedLink.preview_photo_ids.length > 0 && (
+            <div className="mt-3 flex items-center gap-2">
+              {selectedLink.preview_photo_ids.map((id) => (
+                <img
+                  key={id}
+                  src={`/api/photos/${id}/image?w=400`}
+                  alt=""
+                  className="h-16 w-16 rounded object-cover"
+                  loading="lazy"
+                />
+              ))}
+              {selectedLink.photo_count >
+                selectedLink.preview_photo_ids.length && (
+                <span className="text-sm text-zinc-500">
+                  +
+                  {selectedLink.photo_count -
+                    selectedLink.preview_photo_ids.length}{" "}
+                  more
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Overview Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -437,8 +488,17 @@ export default function AnalyticsDashboard() {
                       key={link.share_link_id}
                       className="border-b border-zinc-800/50"
                     >
-                      <td className="py-2 font-mono text-zinc-200">
-                        {link.code}
+                      <td className="py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-zinc-200">
+                            {link.code}
+                          </span>
+                          {link.title && (
+                            <span className="truncate text-zinc-400">
+                              {link.title}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-2">
                         <span
