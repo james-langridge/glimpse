@@ -2,26 +2,10 @@ import Link from "next/link";
 import { getPhotoCount } from "@/src/db/photos";
 import { getLinkCounts } from "@/src/db/links";
 import { getOverviewStats, getRecentViews } from "@/src/db/analytics";
+import { RecentActivityTable } from "@/src/components/RecentActivityTable";
 
 export const dynamic = "force-dynamic";
 
-function formatDuration(ms: number): string {
-  if (ms < 1000) return "< 1s";
-  const seconds = Math.floor(ms / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  const remaining = seconds % 60;
-  return `${minutes}m ${remaining}s`;
-}
-
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default async function AdminPage() {
   const [photoCount, linkCounts, overview, recentViews] = await Promise.all([
@@ -86,48 +70,12 @@ export default async function AdminPage() {
             </Link>
           </div>
           {recentViews.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-800 text-zinc-400">
-                    <th className="pb-2 font-medium">Code</th>
-                    <th className="pb-2 font-medium">Location</th>
-                    <th className="pb-2 font-medium">Device</th>
-                    <th className="pb-2 font-medium">Browser</th>
-                    <th className="pb-2 text-right font-medium">Duration</th>
-                    <th className="pb-2 text-right font-medium">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentViews.map((view) => (
-                    <tr key={view.id} className="border-b border-zinc-800/50">
-                      <td className="py-2 pr-4 font-mono text-zinc-200">
-                        {view.code}
-                      </td>
-                      <td className="py-2 pr-4 text-zinc-400">
-                        {[view.city, view.country]
-                          .filter(Boolean)
-                          .join(", ") || "-"}
-                      </td>
-                      <td className="py-2 pr-4 capitalize text-zinc-400">
-                        {view.device_type ?? "-"}
-                      </td>
-                      <td className="py-2 pr-4 text-zinc-400">
-                        {[view.browser, view.os].filter(Boolean).join(" / ") || "-"}
-                      </td>
-                      <td className="py-2 pr-4 text-right text-zinc-500">
-                        {view.session_duration_ms
-                          ? formatDuration(view.session_duration_ms)
-                          : "-"}
-                      </td>
-                      <td className="py-2 text-right text-zinc-600">
-                        {formatDateTime(String(view.viewed_at))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <RecentActivityTable
+              views={recentViews.map((v) => ({
+                ...v,
+                viewed_at: String(v.viewed_at),
+              }))}
+            />
           ) : (
             <p className="py-4 text-center text-sm text-zinc-500">
               No views yet
