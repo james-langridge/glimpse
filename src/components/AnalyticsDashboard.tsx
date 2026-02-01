@@ -682,7 +682,7 @@ export default function AnalyticsDashboard() {
                             {link.code}
                           </span>
                           {link.title && (
-                            <span className="truncate text-zinc-400">
+                            <span className="hidden truncate text-zinc-400 md:inline">
                               {link.title}
                             </span>
                           )}
