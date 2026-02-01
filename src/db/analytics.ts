@@ -163,6 +163,121 @@ export async function getRecentViews(
   return result.rows;
 }
 
+function buildPhotoAnalyticsFilter(photoId: string, days: number) {
+  const values: (string | number)[] = [photoId, days];
+  const where = `slp.photo_id = $1 AND lv.viewed_at >= NOW() - $2 * INTERVAL '1 day'`;
+  const from = `link_views lv JOIN share_link_photos slp ON lv.share_link_id = slp.share_link_id`;
+  return { from, where, values };
+}
+
+export async function getOverviewStatsForPhoto(
+  photoId: string,
+  days: number = 30,
+) {
+  const { from, where, values } = buildPhotoAnalyticsFilter(photoId, days);
+  const result = await query<{
+    total_views: string;
+    unique_visitors: string;
+    avg_duration_ms: string;
+  }>(
+    `SELECT
+      COUNT(*) as total_views,
+      COUNT(DISTINCT lv.ip_hash) as unique_visitors,
+      COALESCE(AVG(lv.session_duration_ms), 0) as avg_duration_ms
+     FROM ${from}
+     WHERE ${where}`,
+    values,
+  );
+  const row = result.rows[0];
+  return {
+    total_views: parseInt(row.total_views, 10),
+    unique_visitors: parseInt(row.unique_visitors, 10),
+    avg_duration_ms: parseFloat(row.avg_duration_ms),
+  };
+}
+
+export async function getViewsOverTimeForPhoto(
+  photoId: string,
+  days: number = 30,
+) {
+  const { from, where, values } = buildPhotoAnalyticsFilter(photoId, days);
+  const result = await query<{ date: string; views: string }>(
+    `SELECT DATE(lv.viewed_at) as date, COUNT(*) as views
+     FROM ${from} WHERE ${where}
+     GROUP BY DATE(lv.viewed_at) ORDER BY date ASC`,
+    values,
+  );
+  return result.rows.map((r) => ({ date: r.date, views: parseInt(r.views, 10) }));
+}
+
+export async function getDeviceBreakdownForPhoto(
+  photoId: string,
+  days: number = 30,
+) {
+  const { from, where, values } = buildPhotoAnalyticsFilter(photoId, days);
+  const result = await query<{ device_type: string; count: string }>(
+    `SELECT COALESCE(lv.device_type, 'unknown') as device_type, COUNT(*) as count
+     FROM ${from} WHERE ${where}
+     GROUP BY lv.device_type ORDER BY count DESC`,
+    values,
+  );
+  return result.rows.map((r) => ({ device_type: r.device_type, count: parseInt(r.count, 10) }));
+}
+
+export async function getBrowserBreakdownForPhoto(
+  photoId: string,
+  days: number = 30,
+) {
+  const { from, where, values } = buildPhotoAnalyticsFilter(photoId, days);
+  const result = await query<{ browser: string; count: string }>(
+    `SELECT COALESCE(lv.browser, 'unknown') as browser, COUNT(*) as count
+     FROM ${from} WHERE ${where}
+     GROUP BY lv.browser ORDER BY count DESC`,
+    values,
+  );
+  return result.rows.map((r) => ({ browser: r.browser, count: parseInt(r.count, 10) }));
+}
+
+export async function getGeoBreakdownForPhoto(
+  photoId: string,
+  days: number = 30,
+) {
+  const { from, where, values } = buildPhotoAnalyticsFilter(photoId, days);
+  const result = await query<{ country: string; city: string; count: string }>(
+    `SELECT COALESCE(lv.country, 'unknown') as country, COALESCE(lv.city, 'unknown') as city, COUNT(*) as count
+     FROM ${from} WHERE ${where}
+     GROUP BY lv.country, lv.city ORDER BY count DESC`,
+    values,
+  );
+  return result.rows.map((r) => ({ country: r.country, city: r.city, count: parseInt(r.count, 10) }));
+}
+
+export async function getRecentViewsForPhoto(
+  photoId: string,
+  limit: number = 20,
+  days?: number,
+) {
+  const conditions = ["slp.photo_id = $1"];
+  const values: (string | number)[] = [photoId];
+  if (days) {
+    values.push(days);
+    conditions.push(`lv.viewed_at >= NOW() - $${values.length} * INTERVAL '1 day'`);
+  }
+  values.push(limit);
+  const where = conditions.join(" AND ");
+  const result = await query<LinkView & { code: string }>(
+    `SELECT lv.*, sl.code
+     FROM link_views lv
+     JOIN share_link_photos slp ON lv.share_link_id = slp.share_link_id
+     JOIN share_links sl ON sl.id = lv.share_link_id
+     WHERE ${where}
+     ORDER BY lv.viewed_at DESC
+     LIMIT $${values.length}`,
+    values,
+  );
+  return result.rows;
+}
+
 export async function getPerLinkStats(days: number = 30) {
   const result = await query<{
     share_link_id: string;
