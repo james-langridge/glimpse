@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-02-01
+
+### Added
+
+- Detailed analytics section on link detail page (views, devices, browsers, geo, recent views)
+- Detailed analytics section on photo detail page
+- Responsive card layout for analytics recent views on mobile
+- Responsive card layout for recent activity on mobile
+- Responsive card layout for photo table on mobile
+
+### Changed
+
+- Per-link stats rows click through to link detail page
+- Dashboard recent activity rows click through to link details
+- Hide link title in per-link stats table on mobile
+
+## [0.3.0] - 2026-02-01
+
+### Added
+
+- Photo detail pages with stats columns in photos table
+- Column sorting on admin links, photos, and analytics dashboard tables
+- Device and browser columns in dashboard recent activity
+- Link titles and photo previews on analytics page
+- Screenshots on about page and README
+
+### Changed
+
+- Default photos page to table view, persist view preference in URL param
+- Table rows clickable for navigation, code column copies share URL
+- Use browser history for all back buttons
+- Sort expires column soonest-first by default
+- Sort analytics link dropdown by creation date instead of views
+- Hide per-link stats when individual link selected
+
+### Fixed
+
+- Admin sidebar stays visible while scrolling
+
+### Removed
+
+- Lightbox component from share gallery
+
 ## [0.2.0] - 2026-01-31
 
 ### Added
@@ -48,5 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 Initial public release.
 
+[0.4.0]: https://github.com/james-langridge/glimpse/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/james-langridge/glimpse/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/james-langridge/glimpse/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/james-langridge/glimpse/releases/tag/v0.1.0
