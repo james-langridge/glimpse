@@ -181,7 +181,7 @@ export async function getPerLinkStats(days: number = 30) {
      LEFT JOIN link_views lv ON lv.share_link_id = sl.id
        AND lv.viewed_at >= NOW() - $1 * INTERVAL '1 day'
      GROUP BY sl.id, sl.code, sl.title, sl.revoked, sl.expires_at
-     ORDER BY views DESC`,
+     ORDER BY sl.created_at DESC`,
     [days],
   );
   return result.rows.map((r) => ({
