@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 interface LinkItem {
   id: string;
@@ -99,6 +99,41 @@ const statusColors: Record<string, string> = {
   expired: "bg-zinc-500/20 text-zinc-400",
   revoked: "bg-red-500/20 text-red-400",
 };
+
+type SortKey = "code" | "status" | "photos" | "expires" | "created";
+type SortDir = "asc" | "desc";
+
+const statusOrder: Record<string, number> = { active: 0, expired: 1, revoked: 2 };
+
+function compareLinkItems(a: LinkItem, b: LinkItem, key: SortKey): number {
+  switch (key) {
+    case "code":
+      return a.code.localeCompare(b.code);
+    case "status":
+      return (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3);
+    case "photos":
+      return a.photo_count - b.photo_count;
+    case "expires":
+      return new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime();
+    case "created":
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  }
+}
+
+function SortIcon({ direction }: { direction: SortDir | null }) {
+  return (
+    <svg className="ml-1 inline h-3 w-3" viewBox="0 0 10 14" fill="currentColor">
+      <path
+        d="M5 0L9 5H1L5 0Z"
+        className={direction === "asc" ? "text-white" : "text-zinc-600"}
+      />
+      <path
+        d="M5 14L1 9H9L5 14Z"
+        className={direction === "desc" ? "text-white" : "text-zinc-600"}
+      />
+    </svg>
+  );
+}
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-GB", {
@@ -210,6 +245,23 @@ function LinkCard({ link }: { link: LinkItem }) {
 }
 
 export default function LinkTable({ links }: LinkTableProps) {
+  const [sortKey, setSortKey] = useState<SortKey>("created");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir(key === "code" ? "asc" : "desc");
+    }
+  }
+
+  const sorted = useMemo(() => {
+    const multiplier = sortDir === "asc" ? 1 : -1;
+    return [...links].sort((a, b) => multiplier * compareLinkItems(a, b, sortKey));
+  }, [links, sortKey, sortDir]);
+
   if (links.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-zinc-700 py-16 text-center text-zinc-500">
@@ -218,11 +270,19 @@ export default function LinkTable({ links }: LinkTableProps) {
     );
   }
 
+  const columns: { key: SortKey; label: string }[] = [
+    { key: "code", label: "Code" },
+    { key: "status", label: "Status" },
+    { key: "photos", label: "Photos" },
+    { key: "expires", label: "Expires" },
+    { key: "created", label: "Created" },
+  ];
+
   return (
     <>
       {/* Mobile: card layout */}
       <div className="flex flex-col gap-3 md:hidden">
-        {links.map((link) => (
+        {sorted.map((link) => (
           <LinkCard key={link.id} link={link} />
         ))}
       </div>
@@ -232,16 +292,22 @@ export default function LinkTable({ links }: LinkTableProps) {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-zinc-800 text-zinc-400">
-              <th className="pb-3 pr-4 font-medium">Code</th>
-              <th className="pb-3 pr-4 font-medium">Status</th>
-              <th className="pb-3 pr-4 font-medium">Photos</th>
-              <th className="pb-3 pr-4 font-medium">Expires</th>
-              <th className="pb-3 pr-4 font-medium">Created</th>
+              {columns.map((col) => (
+                <th key={col.key} className="pb-3 pr-4 font-medium">
+                  <button
+                    onClick={() => handleSort(col.key)}
+                    className="inline-flex items-center transition hover:text-white"
+                  >
+                    {col.label}
+                    <SortIcon direction={sortKey === col.key ? sortDir : null} />
+                  </button>
+                </th>
+              ))}
               <th className="pb-3 font-medium"></th>
             </tr>
           </thead>
           <tbody>
-            {links.map((link) => (
+            {sorted.map((link) => (
               <tr key={link.id} className="border-b border-zinc-800/50">
                 <td className="py-3 pr-4">
                   <div className="flex items-center gap-2">
