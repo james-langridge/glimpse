@@ -167,19 +167,20 @@ export async function getPerLinkStats(days: number = 30) {
   const result = await query<{
     share_link_id: string;
     code: string;
+    title: string | null;
     revoked: boolean;
     expires_at: Date;
     views: string;
     unique_visitors: string;
   }>(
     `SELECT
-      sl.id as share_link_id, sl.code, sl.revoked, sl.expires_at,
+      sl.id as share_link_id, sl.code, sl.title, sl.revoked, sl.expires_at,
       COUNT(lv.id) as views,
       COUNT(DISTINCT lv.ip_hash) as unique_visitors
      FROM share_links sl
      LEFT JOIN link_views lv ON lv.share_link_id = sl.id
        AND lv.viewed_at >= NOW() - $1 * INTERVAL '1 day'
-     GROUP BY sl.id, sl.code, sl.revoked, sl.expires_at
+     GROUP BY sl.id, sl.code, sl.title, sl.revoked, sl.expires_at
      ORDER BY views DESC`,
     [days],
   );
