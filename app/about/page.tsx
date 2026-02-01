@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import BackLink from "@/src/components/BackLink";
@@ -59,6 +60,61 @@ export default function About() {
             That&rsquo;s it. You stay in control of what&rsquo;s shared, who
             sees it, and for how long.
           </p>
+
+          <h2 className="pt-4 text-xl font-medium text-white">
+            The admin panel
+          </h2>
+          <div className="space-y-6">
+            <figure>
+              <Image
+                src="/dashboard.png"
+                alt="Admin dashboard showing photo count, active links, total views, and recent activity"
+                width={930}
+                height={600}
+                className="rounded-lg border border-zinc-800"
+              />
+              <figcaption className="mt-2 text-sm text-zinc-500">
+                Dashboard &mdash; overview of your photos and recent activity
+              </figcaption>
+            </figure>
+            <figure>
+              <Image
+                src="/photos.png"
+                alt="Photo management page with upload button and table of photos"
+                width={930}
+                height={600}
+                className="rounded-lg border border-zinc-800"
+              />
+              <figcaption className="mt-2 text-sm text-zinc-500">
+                Photos &mdash; upload and manage your photo pool
+              </figcaption>
+            </figure>
+            <figure>
+              <Image
+                src="/links.png"
+                alt="Link management page showing active, expired, and revoked share links"
+                width={930}
+                height={600}
+                className="rounded-lg border border-zinc-800"
+              />
+              <figcaption className="mt-2 text-sm text-zinc-500">
+                Links &mdash; create and manage share links with expiry dates
+              </figcaption>
+            </figure>
+            <figure>
+              <Image
+                src="/analytics.png"
+                alt="Analytics page with per-link stats and recent view details"
+                width={930}
+                height={600}
+                className="rounded-lg border border-zinc-800"
+              />
+              <figcaption className="mt-2 text-sm text-zinc-500">
+                Analytics &mdash; view counts, locations, devices, and session
+                duration
+              </figcaption>
+            </figure>
+          </div>
 
           <h2 className="pt-4 text-xl font-medium text-white">
             Why is it secure?
