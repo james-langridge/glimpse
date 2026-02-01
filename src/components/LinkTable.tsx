@@ -253,7 +253,7 @@ export default function LinkTable({ links }: LinkTableProps) {
       setSortDir(sortDir === "asc" ? "desc" : "asc");
     } else {
       setSortKey(key);
-      setSortDir(key === "code" ? "asc" : "desc");
+      setSortDir(key === "code" || key === "expires" ? "asc" : "desc");
     }
   }
 
