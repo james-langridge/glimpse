@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface Photo {
@@ -89,7 +89,6 @@ function SortIcon({ direction }: { direction: SortDir | null }) {
 export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("uploaded");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -106,18 +105,6 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
     const multiplier = sortDir === "asc" ? 1 : -1;
     return [...photos].sort((a, b) => multiplier * comparePhotos(a, b, sortKey));
   }, [photos, sortKey, sortDir]);
-
-  useEffect(() => {
-    if (!activeId) return;
-    function handleTap(e: MouseEvent) {
-      const target = e.target as HTMLElement;
-      if (!target.closest(`[data-photo-id="${activeId}"]`)) {
-        setActiveId(null);
-      }
-    }
-    document.addEventListener("click", handleTap);
-    return () => document.removeEventListener("click", handleTap);
-  }, [activeId]);
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this photo? This cannot be undone.")) return;
@@ -244,14 +231,11 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-      {sorted.map((photo) => {
-        const isActive = activeId === photo.id;
-        return (
+      {sorted.map((photo) => (
           <div
             key={photo.id}
-            data-photo-id={photo.id}
-            className="group relative overflow-hidden rounded-lg bg-zinc-800"
-            onClick={() => setActiveId(isActive ? null : photo.id)}
+            className="group relative cursor-pointer overflow-hidden rounded-lg bg-zinc-800"
+            onClick={() => router.push(`/admin/photos/${photo.id}`)}
           >
             <div
               className="relative"
@@ -275,10 +259,10 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
               />
             </div>
             <div
-              className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+              className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition group-hover:opacity-100"
             />
             <div
-              className={`absolute bottom-0 left-0 right-0 flex items-end justify-between gap-2 p-2 transition ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+              className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-2 p-2 opacity-0 transition group-hover:opacity-100"
             >
               <div className="min-w-0">
                 <p className="truncate text-xs text-zinc-200">
@@ -293,31 +277,19 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
                     .join(" · ")}
                 </p>
               </div>
-              <div className="flex gap-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/admin/photos/${photo.id}`);
-                  }}
-                  className="rounded bg-zinc-700/80 px-2 py-1 text-xs font-medium text-white hover:bg-zinc-600"
-                >
-                  Details
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(photo.id);
-                  }}
-                  disabled={deleting === photo.id}
-                  className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
-                >
-                  {deleting === photo.id ? "..." : "Delete"}
-                </button>
-              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(photo.id);
+                }}
+                disabled={deleting === photo.id}
+                className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {deleting === photo.id ? "..." : "Delete"}
+              </button>
             </div>
           </div>
-        );
-      })}
+        ))}
     </div>
   );
 }
