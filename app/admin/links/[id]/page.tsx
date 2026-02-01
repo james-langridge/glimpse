@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import PhotoSelector from "@/src/components/PhotoSelector";
+import LinkAnalytics from "@/src/components/LinkAnalytics";
 
 interface Photo {
   id: string;
@@ -413,6 +414,12 @@ export default function LinkDetailPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Analytics */}
+        <div className="mb-8">
+          <h2 className="mb-3 text-sm font-medium text-zinc-300">Analytics</h2>
+          <LinkAnalytics linkId={link.id} />
         </div>
 
         {/* Actions */}
