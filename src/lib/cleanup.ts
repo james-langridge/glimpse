@@ -34,8 +34,10 @@ export async function runCleanup(): Promise<CleanupResult> {
 
   try {
     await setSetting("LAST_CLEANUP_AT", new Date().toISOString());
+    await setSetting("LAST_CLEANUP_DELETED", String(deleted.length));
+    await setSetting("LAST_CLEANUP_ERRORS", String(errors.length));
   } catch (e) {
-    console.error("Failed to record cleanup timestamp:", e);
+    console.error("Failed to record cleanup stats:", e);
   }
 
   return { deleted, errors };

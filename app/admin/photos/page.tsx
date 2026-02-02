@@ -58,6 +58,12 @@ function PhotosContent() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [cleanupDays, setCleanupDays] = useState<number | null>(null);
   const [lastCleanupAt, setLastCleanupAt] = useState<string | null>(null);
+  const [lastCleanupDeleted, setLastCleanupDeleted] = useState<number | null>(
+    null,
+  );
+  const [lastCleanupErrors, setLastCleanupErrors] = useState<number | null>(
+    null,
+  );
 
   const paramView = searchParams.get("view");
   const view: "grid" | "table" =
@@ -97,6 +103,16 @@ function PhotosContent() {
         }
         if (data.lastCleanupAt) {
           setLastCleanupAt(data.lastCleanupAt);
+          setLastCleanupDeleted(
+            data.lastCleanupDeleted != null
+              ? parseInt(data.lastCleanupDeleted, 10)
+              : null,
+          );
+          setLastCleanupErrors(
+            data.lastCleanupErrors != null
+              ? parseInt(data.lastCleanupErrors, 10)
+              : null,
+          );
         }
       })
       .catch(() => {});
@@ -214,8 +230,17 @@ function PhotosContent() {
                   {lastCleanupAt && (
                     <span className="text-zinc-600">
                       {" "}
-                      (last run:{" "}
-                      {lastCleanupAt})
+                      (last run: {lastCleanupAt}
+                      {lastCleanupDeleted != null && (
+                        <>
+                          {" — "}
+                          {lastCleanupDeleted} deleted
+                          {lastCleanupErrors
+                            ? `, ${lastCleanupErrors} error${lastCleanupErrors !== 1 ? "s" : ""}`
+                            : ""}
+                        </>
+                      )}
+                      )
                     </span>
                   )}
                 </p>

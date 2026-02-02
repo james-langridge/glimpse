@@ -36,6 +36,12 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [lastCleanupAt, setLastCleanupAt] = useState<string | null>(null);
+  const [lastCleanupDeleted, setLastCleanupDeleted] = useState<number | null>(
+    null,
+  );
+  const [lastCleanupErrors, setLastCleanupErrors] = useState<number | null>(
+    null,
+  );
 
   const fetchSettings = useCallback(async () => {
     setFetchError(false);
@@ -45,6 +51,16 @@ export default function SettingsPage() {
         const data = await res.json();
         setSettings(data.settings);
         setLastCleanupAt(data.lastCleanupAt ?? null);
+        setLastCleanupDeleted(
+          data.lastCleanupDeleted != null
+            ? parseInt(data.lastCleanupDeleted, 10)
+            : null,
+        );
+        setLastCleanupErrors(
+          data.lastCleanupErrors != null
+            ? parseInt(data.lastCleanupErrors, 10)
+            : null,
+        );
         const newInputs: Record<string, string> = {};
         for (const s of data.settings) {
           newInputs[s.key] = s.dbValue ?? "";
@@ -202,6 +218,15 @@ export default function SettingsPage() {
                   {s.key === "CLEANUP_DAYS" && lastCleanupAt && (
                     <p className="mt-1 text-xs text-zinc-500">
                       Last cleanup run: {lastCleanupAt}
+                      {lastCleanupDeleted != null && (
+                        <>
+                          {" — "}
+                          {lastCleanupDeleted} deleted
+                          {lastCleanupErrors
+                            ? `, ${lastCleanupErrors} error${lastCleanupErrors !== 1 ? "s" : ""}`
+                            : ""}
+                        </>
+                      )}
                     </p>
                   )}
                 </div>
