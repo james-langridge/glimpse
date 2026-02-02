@@ -47,7 +47,9 @@ export async function GET() {
       default: DEFAULTS[key],
     }));
 
-    return NextResponse.json(settings);
+    const lastCleanupAt = dbSettings["LAST_CLEANUP_AT"] ?? null;
+
+    return NextResponse.json({ settings, lastCleanupAt });
   } catch (e) {
     console.error("Failed to fetch settings:", e);
     return NextResponse.json(

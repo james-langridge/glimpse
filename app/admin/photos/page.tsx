@@ -57,6 +57,7 @@ function PhotosContent() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [cleanupDays, setCleanupDays] = useState<number | null>(null);
+  const [lastCleanupAt, setLastCleanupAt] = useState<string | null>(null);
 
   const paramView = searchParams.get("view");
   const view: "grid" | "table" =
@@ -85,14 +86,17 @@ function PhotosContent() {
   useEffect(() => {
     fetch("/api/settings")
       .then((res) => (res.ok ? res.json() : null))
-      .then((settings) => {
-        if (!settings) return;
-        const entry = settings.find(
+      .then((data) => {
+        if (!data) return;
+        const entry = data.settings.find(
           (s: { key: string }) => s.key === "CLEANUP_DAYS",
         );
         if (entry) {
           const effective = entry.dbValue ?? entry.envValue ?? entry.default;
           setCleanupDays(parseInt(effective, 10));
+        }
+        if (data.lastCleanupAt) {
+          setLastCleanupAt(data.lastCleanupAt);
         }
       })
       .catch(() => {});
@@ -207,6 +211,13 @@ function PhotosContent() {
                 <p className="mt-1 text-sm text-zinc-500">
                   Unlinked photos are auto-deleted after {cleanupDays} day
                   {cleanupDays !== 1 ? "s" : ""}
+                  {lastCleanupAt && (
+                    <span className="text-zinc-600">
+                      {" "}
+                      (last run:{" "}
+                      {new Date(lastCleanupAt).toLocaleString()})
+                    </span>
+                  )}
                 </p>
               ) : (
                 <p className="mt-1 text-sm text-zinc-500">

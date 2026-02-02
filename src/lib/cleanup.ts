@@ -1,4 +1,5 @@
 import { getPhotosForCleanup, deletePhoto } from "@/src/db/photos";
+import { setSetting } from "@/src/db/settings";
 import { deletePhotoFile } from "@/src/lib/storage";
 
 interface CleanupResult {
@@ -23,6 +24,12 @@ export async function runCleanup(): Promise<CleanupResult> {
         error: e instanceof Error ? e.message : String(e),
       });
     }
+  }
+
+  try {
+    await setSetting("LAST_CLEANUP_AT", new Date().toISOString());
+  } catch (e) {
+    console.error("Failed to record cleanup timestamp:", e);
   }
 
   return { deleted, errors };

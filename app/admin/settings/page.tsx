@@ -41,10 +41,10 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/settings");
       if (res.ok) {
-        const data: SettingInfo[] = await res.json();
-        setSettings(data);
+        const data = await res.json();
+        setSettings(data.settings);
         const newInputs: Record<string, string> = {};
-        for (const s of data) {
+        for (const s of data.settings) {
           newInputs[s.key] = s.dbValue ?? "";
         }
         setInputs(newInputs);
