@@ -182,7 +182,10 @@ function PhotosContent() {
           {tabs.map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key);
+                setSelectedIds(new Set());
+              }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 tab === t.key
                   ? "bg-zinc-800 text-white"
