@@ -1,14 +1,14 @@
-import Link from "next/link";
-
 export default function Footer() {
   return (
     <footer className="flex flex-col items-center gap-3 pb-6 pt-8">
-      <Link
-        href="/about"
+      <a
+        href="https://langridge.dev/glimpse"
+        target="_blank"
+        rel="noopener noreferrer"
         className="text-sm text-zinc-600 transition-colors hover:text-zinc-400"
       >
         About Glimpse
-      </Link>
+      </a>
       <p className="text-xs text-zinc-700">
         Built by{" "}
         <a
