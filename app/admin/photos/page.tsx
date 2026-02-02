@@ -215,7 +215,7 @@ function PhotosContent() {
                     <span className="text-zinc-600">
                       {" "}
                       (last run:{" "}
-                      {new Date(lastCleanupAt).toLocaleString()})
+                      {lastCleanupAt})
                     </span>
                   )}
                 </p>

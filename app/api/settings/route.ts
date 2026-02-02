@@ -47,7 +47,15 @@ export async function GET() {
       default: DEFAULTS[key],
     }));
 
-    const lastCleanupAt = dbSettings["LAST_CLEANUP_AT"] ?? null;
+    const displayTimezone =
+      dbSettings["DISPLAY_TIMEZONE"] || process.env.DISPLAY_TIMEZONE || "";
+    const lastCleanupAtRaw = dbSettings["LAST_CLEANUP_AT"] ?? null;
+    const lastCleanupAt = lastCleanupAtRaw
+      ? new Date(lastCleanupAtRaw).toLocaleString(undefined, {
+          timeZoneName: "short",
+          ...(displayTimezone && { timeZone: displayTimezone }),
+        })
+      : null;
 
     return NextResponse.json({ settings, lastCleanupAt });
   } catch (e) {

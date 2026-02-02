@@ -35,6 +35,7 @@ export default function SettingsPage() {
   const [successes, setSuccesses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
+  const [lastCleanupAt, setLastCleanupAt] = useState<string | null>(null);
 
   const fetchSettings = useCallback(async () => {
     setFetchError(false);
@@ -43,6 +44,7 @@ export default function SettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setSettings(data.settings);
+        setLastCleanupAt(data.lastCleanupAt ?? null);
         const newInputs: Record<string, string> = {};
         for (const s of data.settings) {
           newInputs[s.key] = s.dbValue ?? "";
@@ -197,6 +199,11 @@ export default function SettingsPage() {
                   <p className="mt-0.5 text-xs text-zinc-400">
                     {meta?.description}
                   </p>
+                  {s.key === "CLEANUP_DAYS" && lastCleanupAt && (
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Last cleanup run: {lastCleanupAt}
+                    </p>
+                  )}
                 </div>
 
                 <div className="mb-3 text-xs text-zinc-500">
