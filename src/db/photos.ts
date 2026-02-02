@@ -1,4 +1,5 @@
 import { sql } from "@/src/lib/db";
+import { getConfig } from "@/src/lib/config";
 
 export interface Photo {
   id: string;
@@ -65,7 +66,7 @@ export async function deletePhoto(id: string) {
 }
 
 export async function getPhotosForCleanup() {
-  const days = parseInt(process.env.CLEANUP_DAYS ?? "30", 10);
+  const days = parseInt(await getConfig("CLEANUP_DAYS"), 10);
   if (days <= 0 || isNaN(days)) return [];
   const result = await sql<Photo>`
     SELECT p.* FROM photos p

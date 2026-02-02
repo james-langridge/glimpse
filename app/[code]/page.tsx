@@ -5,6 +5,7 @@ import { getLinkByCode, getLinkStatus } from "@/src/db/links";
 import { getPhotosForCode } from "@/src/db/links";
 import { insertView } from "@/src/db/analytics";
 import { hashIP, isBot, parseGeo, parseUserAgent } from "@/src/lib/analytics";
+import { getConfig } from "@/src/lib/config";
 import ShareGallery from "@/src/components/ShareGallery";
 import DurationTracker from "@/src/components/DurationTracker";
 import Footer from "@/src/components/Footer";
@@ -29,13 +30,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const photos = await getPhotosForCode(upperCode);
   if (photos.length === 0) return {};
 
-  const siteUrl = process.env.SITE_URL || "";
+  const [siteUrl, displayTimezone] = await Promise.all([
+    getConfig("SITE_URL"),
+    getConfig("DISPLAY_TIMEZONE"),
+  ]);
   const imageUrl = `${siteUrl}/og-image.jpg`;
   const photoCount = photos.length;
   const title =
     link.title || (photoCount === 1 ? "1 photo" : `${photoCount} photos`);
   const expiresAt = new Date(link.expires_at);
-  const description = `Link expires ${expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short", ...(process.env.DISPLAY_TIMEZONE && { timeZone: process.env.DISPLAY_TIMEZONE }) })}`;
+  const description = `Link expires ${expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short", ...(displayTimezone && { timeZone: displayTimezone }) })}`;
 
   return {
     title,
