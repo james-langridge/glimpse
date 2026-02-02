@@ -74,6 +74,20 @@ function comparePhotos(a: Photo, b: Photo, key: SortKey): number {
   }
 }
 
+function Checkmark({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className ?? "h-3 w-3 text-white"}
+      viewBox="0 0 12 12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M2 6l3 3 5-5" />
+    </svg>
+  );
+}
+
 function SortIcon({ direction }: { direction: SortDir | null }) {
   return (
     <svg className="ml-1 inline h-3 w-3" viewBox="0 0 10 14" fill="currentColor">
@@ -188,11 +202,7 @@ export default function PhotoGrid({
                   : "border-zinc-600 bg-zinc-800"
               }`}
             >
-              {isSelected && (
-                <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M2 6l3 3 5-5" />
-                </svg>
-              )}
+              {isSelected && <Checkmark />}
             </div>
           )}
           <img
@@ -302,11 +312,7 @@ export default function PhotoGrid({
                               : "border-zinc-600 bg-zinc-800"
                           }`}
                         >
-                          {isSelected && (
-                            <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M2 6l3 3 5-5" />
-                            </svg>
-                          )}
+                          {isSelected && <Checkmark />}
                         </div>
                       </td>
                     )}
@@ -404,9 +410,7 @@ export default function PhotoGrid({
             </div>
             {selectionMode && isSelected && (
               <div className="absolute top-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500">
-                <svg className="h-3.5 w-3.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M2 6l3 3 5-5" />
-                </svg>
+                <Checkmark className="h-3.5 w-3.5 text-white" />
               </div>
             )}
             {selectionMode && !isSelected && (

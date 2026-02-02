@@ -103,16 +103,14 @@ function PhotosContent() {
       if (res.status === 409) {
         const data = await res.json();
         const totalConflicts = data.conflicts.length;
-        const codes = data.conflicts
-          .flatMap(
-            (c: { links: { code: string }[] }) =>
-              c.links.map((l) => l.code),
-          )
-          .filter(
-            (code: string, i: number, arr: string[]) =>
-              arr.indexOf(code) === i,
-          )
-          .join(", ");
+        const codes = [
+          ...new Set(
+            data.conflicts.flatMap(
+              (c: { links: { code: string }[] }) =>
+                c.links.map((l) => l.code),
+            ),
+          ),
+        ].join(", ");
         const proceed = confirm(
           `${totalConflicts} photo${totalConflicts !== 1 ? "s are" : " is"} in active share link(s): ${codes}. Delete anyway?`,
         );
@@ -128,6 +126,8 @@ function PhotosContent() {
           const deletedSet = new Set(forceData.deleted);
           setPhotos((prev) => prev.filter((p) => !deletedSet.has(p.id)));
           handleCancelSelection();
+        } else {
+          alert("Failed to delete photos. Please try again.");
         }
         return;
       }
