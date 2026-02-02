@@ -104,6 +104,21 @@ export default function LinkDetailPage() {
     if (res.ok) fetchLink();
   }
 
+  async function handleDuplicate() {
+    if (
+      !confirm(
+        "Duplicate this link? A new link will be created with the same photos and a fresh expiry.",
+      )
+    )
+      return;
+
+    const res = await fetch(`/api/links/${id}/duplicate`, { method: "POST" });
+    if (res.ok) {
+      const data = await res.json();
+      router.push(`/admin/links/${data.id}`);
+    }
+  }
+
   async function handleDelete() {
     if (!confirm("Delete this link permanently? This cannot be undone."))
       return;
@@ -424,6 +439,12 @@ export default function LinkDetailPage() {
 
         {/* Actions */}
         <div className="flex gap-3 border-t border-zinc-800 pt-6">
+          <button
+            onClick={handleDuplicate}
+            className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-400 transition hover:bg-indigo-600/30"
+          >
+            Duplicate Link
+          </button>
           {link.status === "active" && (
             <button
               onClick={handleRevoke}
