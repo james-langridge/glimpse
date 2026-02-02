@@ -21,6 +21,9 @@ interface PhotoGridProps {
   photos: Photo[];
   onDelete: (id: string) => void;
   view: "grid" | "table";
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 function formatBytes(bytes: number | null): string {
@@ -86,7 +89,14 @@ function SortIcon({ direction }: { direction: SortDir | null }) {
   );
 }
 
-export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
+export default function PhotoGrid({
+  photos,
+  onDelete,
+  view,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
+}: PhotoGridProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("uploaded");
@@ -154,12 +164,37 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
   ];
 
   function PhotoCard({ photo }: { photo: Photo }) {
+    const isSelected = selectionMode && selectedIds?.has(photo.id);
+
     return (
       <div
-        className="cursor-pointer rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 transition hover:border-zinc-700"
-        onClick={() => router.push(`/admin/photos/${photo.id}`)}
+        className={`cursor-pointer rounded-lg border bg-zinc-900/50 p-4 transition ${
+          isSelected
+            ? "border-blue-500 bg-blue-500/5"
+            : "border-zinc-800 hover:border-zinc-700"
+        }`}
+        onClick={() =>
+          selectionMode
+            ? onToggleSelect?.(photo.id)
+            : router.push(`/admin/photos/${photo.id}`)
+        }
       >
         <div className="flex items-center gap-3">
+          {selectionMode && (
+            <div
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                isSelected
+                  ? "border-blue-500 bg-blue-500"
+                  : "border-zinc-600 bg-zinc-800"
+              }`}
+            >
+              {isSelected && (
+                <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M2 6l3 3 5-5" />
+                </svg>
+              )}
+            </div>
+          )}
           <img
             src={`/api/photos/${photo.id}/image?w=400`}
             alt={photo.original_name ?? photo.filename}
@@ -169,16 +204,18 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
           <p className="min-w-0 truncate text-sm text-zinc-300">
             {photo.original_name ?? photo.filename}
           </p>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(photo.id);
-            }}
-            disabled={deleting === photo.id}
-            className="ml-auto shrink-0 rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
-          >
-            {deleting === photo.id ? "..." : "Delete"}
-          </button>
+          {!selectionMode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(photo.id);
+              }}
+              disabled={deleting === photo.id}
+              className="ml-auto shrink-0 rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+            >
+              {deleting === photo.id ? "..." : "Delete"}
+            </button>
+          )}
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div>
@@ -225,6 +262,7 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-zinc-800 text-zinc-400">
+                {selectionMode && <th className="pb-3 pr-4 w-8 font-medium"></th>}
                 <th className="pb-3 pr-4 font-medium"></th>
                 {columns.map((col) => (
                   <th key={col.key} className="pb-3 pr-4 font-medium">
@@ -237,58 +275,86 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
                     </button>
                   </th>
                 ))}
-                <th className="pb-3 font-medium"></th>
+                {!selectionMode && <th className="pb-3 font-medium"></th>}
               </tr>
             </thead>
             <tbody>
-              {sorted.map((photo) => (
-                <tr
-                  key={photo.id}
-                  className="cursor-pointer border-b border-zinc-800/50 transition hover:bg-zinc-800/50"
-                  onClick={() => router.push(`/admin/photos/${photo.id}`)}
-                >
-                  <td className="py-2 pr-4">
-                    <img
-                      src={`/api/photos/${photo.id}/image?w=400`}
-                      alt={photo.original_name ?? photo.filename}
-                      className="h-10 w-10 rounded object-cover"
-                      loading="lazy"
-                    />
-                  </td>
-                  <td className="py-2 pr-4 text-zinc-300">
-                    <span className="line-clamp-1">
-                      {photo.original_name ?? photo.filename}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-4 text-zinc-400">
-                    {formatDimensions(photo.width, photo.height)}
-                  </td>
-                  <td className="py-2 pr-4 text-zinc-400">
-                    {formatBytes(photo.file_size)}
-                  </td>
-                  <td className="py-2 pr-4 text-zinc-400">
-                    {photo.view_count}
-                  </td>
-                  <td className="py-2 pr-4 text-zinc-400">
-                    {photo.link_count}
-                  </td>
-                  <td className="py-2 pr-4 text-zinc-400">
-                    {formatDate(photo.uploaded_at)}
-                  </td>
-                  <td className="py-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(photo.id);
-                      }}
-                      disabled={deleting === photo.id}
-                      className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
-                    >
-                      {deleting === photo.id ? "..." : "Delete"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {sorted.map((photo) => {
+                const isSelected = selectionMode && selectedIds?.has(photo.id);
+                return (
+                  <tr
+                    key={photo.id}
+                    className={`cursor-pointer border-b border-zinc-800/50 transition ${
+                      isSelected ? "bg-blue-500/10" : "hover:bg-zinc-800/50"
+                    }`}
+                    onClick={() =>
+                      selectionMode
+                        ? onToggleSelect?.(photo.id)
+                        : router.push(`/admin/photos/${photo.id}`)
+                    }
+                  >
+                    {selectionMode && (
+                      <td className="py-2 pr-4">
+                        <div
+                          className={`flex h-5 w-5 items-center justify-center rounded border ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-500"
+                              : "border-zinc-600 bg-zinc-800"
+                          }`}
+                        >
+                          {isSelected && (
+                            <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M2 6l3 3 5-5" />
+                            </svg>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                    <td className="py-2 pr-4">
+                      <img
+                        src={`/api/photos/${photo.id}/image?w=400`}
+                        alt={photo.original_name ?? photo.filename}
+                        className="h-10 w-10 rounded object-cover"
+                        loading="lazy"
+                      />
+                    </td>
+                    <td className="py-2 pr-4 text-zinc-300">
+                      <span className="line-clamp-1">
+                        {photo.original_name ?? photo.filename}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-4 text-zinc-400">
+                      {formatDimensions(photo.width, photo.height)}
+                    </td>
+                    <td className="py-2 pr-4 text-zinc-400">
+                      {formatBytes(photo.file_size)}
+                    </td>
+                    <td className="py-2 pr-4 text-zinc-400">
+                      {photo.view_count}
+                    </td>
+                    <td className="py-2 pr-4 text-zinc-400">
+                      {photo.link_count}
+                    </td>
+                    <td className="py-2 pr-4 text-zinc-400">
+                      {formatDate(photo.uploaded_at)}
+                    </td>
+                    {!selectionMode && (
+                      <td className="py-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(photo.id);
+                          }}
+                          disabled={deleting === photo.id}
+                          className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                        >
+                          {deleting === photo.id ? "..." : "Delete"}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -298,11 +364,22 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-      {sorted.map((photo) => (
+      {sorted.map((photo) => {
+        const isSelected = selectionMode && selectedIds?.has(photo.id);
+
+        return (
           <div
             key={photo.id}
-            className="group relative cursor-pointer overflow-hidden rounded-lg bg-zinc-800"
-            onClick={() => router.push(`/admin/photos/${photo.id}`)}
+            className={`group relative cursor-pointer overflow-hidden rounded-lg bg-zinc-800 transition ${
+              isSelected
+                ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-zinc-950"
+                : ""
+            }`}
+            onClick={() =>
+              selectionMode
+                ? onToggleSelect?.(photo.id)
+                : router.push(`/admin/photos/${photo.id}`)
+            }
           >
             <div
               className="relative"
@@ -325,38 +402,52 @@ export default function PhotoGrid({ photos, onDelete, view }: PhotoGridProps) {
                 loading="lazy"
               />
             </div>
-            <div
-              className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition group-hover:opacity-100"
-            />
-            <div
-              className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-2 p-2 opacity-0 transition group-hover:opacity-100"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-xs text-zinc-200">
-                  {photo.original_name ?? photo.filename}
-                </p>
-                <p className="text-xs text-zinc-400">
-                  {[
-                    formatBytes(photo.file_size),
-                    formatDimensions(photo.width, photo.height),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
+            {selectionMode && isSelected && (
+              <div className="absolute top-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500">
+                <svg className="h-3.5 w-3.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M2 6l3 3 5-5" />
+                </svg>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(photo.id);
-                }}
-                disabled={deleting === photo.id}
-                className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
-              >
-                {deleting === photo.id ? "..." : "Delete"}
-              </button>
-            </div>
+            )}
+            {selectionMode && !isSelected && (
+              <>
+                <div className="absolute inset-0 bg-black/40" />
+                <div className="absolute top-1.5 left-1.5 h-6 w-6 rounded-full border-2 border-white/50" />
+              </>
+            )}
+            {!selectionMode && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+                <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-2 p-2 opacity-0 transition group-hover:opacity-100">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs text-zinc-200">
+                      {photo.original_name ?? photo.filename}
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      {[
+                        formatBytes(photo.file_size),
+                        formatDimensions(photo.width, photo.height),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(photo.id);
+                    }}
+                    disabled={deleting === photo.id}
+                    className="rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {deleting === photo.id ? "..." : "Delete"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-        ))}
+        );
+      })}
     </div>
   );
 }

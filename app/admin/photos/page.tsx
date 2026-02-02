@@ -32,6 +32,9 @@ function PhotosContent() {
   const searchParams = useSearchParams();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const paramView = searchParams.get("view");
   const view: "grid" | "table" =
@@ -61,6 +64,85 @@ function PhotosContent() {
     setPhotos((prev) => prev.filter((p) => p.id !== id));
   }
 
+  function handleToggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function handleCancelSelection() {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+
+    const ids = Array.from(selectedIds);
+    if (
+      !confirm(
+        `Delete ${ids.length} photo${ids.length !== 1 ? "s" : ""}? This cannot be undone.`,
+      )
+    )
+      return;
+
+    setBulkDeleting(true);
+    try {
+      const res = await fetch("/api/photos/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, force: false }),
+      });
+
+      if (res.status === 409) {
+        const data = await res.json();
+        const totalConflicts = data.conflicts.length;
+        const codes = data.conflicts
+          .flatMap(
+            (c: { links: { code: string }[] }) =>
+              c.links.map((l) => l.code),
+          )
+          .filter(
+            (code: string, i: number, arr: string[]) =>
+              arr.indexOf(code) === i,
+          )
+          .join(", ");
+        const proceed = confirm(
+          `${totalConflicts} photo${totalConflicts !== 1 ? "s are" : " is"} in active share link(s): ${codes}. Delete anyway?`,
+        );
+        if (!proceed) return;
+
+        const forceRes = await fetch("/api/photos/bulk-delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids, force: true }),
+        });
+        if (forceRes.ok) {
+          const forceData = await forceRes.json();
+          const deletedSet = new Set(forceData.deleted);
+          setPhotos((prev) => prev.filter((p) => !deletedSet.has(p.id)));
+          handleCancelSelection();
+        }
+        return;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        const deletedSet = new Set(data.deleted);
+        setPhotos((prev) => prev.filter((p) => !deletedSet.has(p.id)));
+        handleCancelSelection();
+      }
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   return (
     <div className="px-6 py-8">
       <div className="mx-auto max-w-6xl">
@@ -76,20 +158,67 @@ function PhotosContent() {
           <ImageUpload onUploadComplete={fetchPhotos} />
         </div>
 
-        <div className="mb-6 flex gap-1 rounded-lg bg-zinc-900 p-1 self-start w-fit">
-          {(["grid", "table"] as const).map((v) => (
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <div className="flex gap-1 rounded-lg bg-zinc-900 p-1">
+            {(["grid", "table"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                  view === v
+                    ? "bg-zinc-800 text-white"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                {v === "grid" ? "Grid" : "Table"}
+              </button>
+            ))}
+          </div>
+
+          {!selectionMode ? (
             <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                view === v
-                  ? "bg-zinc-800 text-white"
-                  : "text-zinc-400 hover:text-zinc-200"
-              }`}
+              onClick={() => setSelectionMode(true)}
+              disabled={photos.length === 0}
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white disabled:opacity-50"
             >
-              {v === "grid" ? "Grid" : "Table"}
+              Select
             </button>
-          ))}
+          ) : (
+            <>
+              <button
+                onClick={handleCancelSelection}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() =>
+                  setSelectedIds(new Set(photos.map((p) => p.id)))
+                }
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
+              >
+                All
+              </button>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
+              >
+                None
+              </button>
+              <span className="text-sm text-zinc-500">
+                {selectedIds.size} selected
+              </span>
+              <button
+                onClick={handleBulkDelete}
+                disabled={selectedIds.size === 0 || bulkDeleting}
+                className="rounded-md bg-red-600/80 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-red-600 disabled:opacity-50"
+              >
+                {bulkDeleting
+                  ? "Deleting..."
+                  : `Delete (${selectedIds.size})`}
+              </button>
+            </>
+          )}
         </div>
 
         {loading ? (
@@ -97,7 +226,14 @@ function PhotosContent() {
             <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
           </div>
         ) : (
-          <PhotoGrid photos={photos} onDelete={handleDelete} view={view} />
+          <PhotoGrid
+            photos={photos}
+            onDelete={handleDelete}
+            view={view}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+          />
         )}
       </div>
     </div>
