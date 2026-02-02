@@ -56,6 +56,7 @@ function PhotosContent() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [cleanupDays, setCleanupDays] = useState<number | null>(null);
 
   const paramView = searchParams.get("view");
   const view: "grid" | "table" =
@@ -80,6 +81,22 @@ function PhotosContent() {
   useEffect(() => {
     fetchPhotos();
   }, [fetchPhotos]);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((settings) => {
+        if (!settings) return;
+        const entry = settings.find(
+          (s: { key: string }) => s.key === "CLEANUP_DAYS",
+        );
+        if (entry) {
+          const effective = entry.dbValue ?? entry.envValue ?? entry.default;
+          setCleanupDays(parseInt(effective, 10));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const filtered = filterPhotos(photos, tab);
 
@@ -185,6 +202,17 @@ function PhotosContent() {
               {photos.length} photo{photos.length !== 1 ? "s" : ""} in pool
               {counts.active > 0 && `, ${counts.active} active`}
             </p>
+            {cleanupDays !== null &&
+              (cleanupDays > 0 ? (
+                <p className="mt-1 text-sm text-zinc-500">
+                  Unlinked photos are auto-deleted after {cleanupDays} day
+                  {cleanupDays !== 1 ? "s" : ""}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-zinc-500">
+                  Auto-cleanup is disabled
+                </p>
+              ))}
           </div>
           <ImageUpload onUploadComplete={fetchPhotos} />
         </div>
