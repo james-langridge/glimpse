@@ -20,11 +20,12 @@ interface Photo {
   active_link_count: number;
 }
 
-type PhotoTab = "all" | "active";
+type PhotoTab = "all" | "active" | "inactive";
 
 const tabs: { key: PhotoTab; label: string }[] = [
   { key: "all", label: "All" },
   { key: "active", label: "Active" },
+  { key: "inactive", label: "Inactive" },
 ];
 
 export default function PhotosPage() {
@@ -72,11 +73,14 @@ function PhotosContent() {
   const filtered =
     tab === "all"
       ? photos
-      : photos.filter((p) => p.active_link_count > 0);
+      : tab === "active"
+        ? photos.filter((p) => p.active_link_count > 0)
+        : photos.filter((p) => p.active_link_count === 0);
 
   const counts = {
     all: photos.length,
     active: photos.filter((p) => p.active_link_count > 0).length,
+    inactive: photos.filter((p) => p.active_link_count === 0).length,
   };
 
   function handleDelete(id: string) {
