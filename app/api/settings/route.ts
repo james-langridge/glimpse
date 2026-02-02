@@ -51,7 +51,7 @@ export async function GET() {
       dbSettings["DISPLAY_TIMEZONE"] || process.env.DISPLAY_TIMEZONE || "";
     const lastCleanupAtRaw = dbSettings["LAST_CLEANUP_AT"] ?? null;
     const lastCleanupAt = lastCleanupAtRaw
-      ? new Date(lastCleanupAtRaw).toLocaleString(undefined, {
+      ? new Date(lastCleanupAtRaw).toLocaleString("en-GB", {
           timeZoneName: "short",
           ...(displayTimezone && { timeZone: displayTimezone }),
         })
