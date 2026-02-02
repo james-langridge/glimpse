@@ -16,6 +16,7 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [duplicateInfo, setDuplicateInfo] = useState<string | null>(null);
 
   async function processFile(file: File): Promise<Blob> {
     const canvas = canvasRef.current!;
@@ -48,9 +49,11 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
 
     setUploading(true);
     setError(null);
+    setDuplicateInfo(null);
     setProgress({ current: 0, total: files.length });
 
     let successCount = 0;
+    let totalDuplicatesSkipped = 0;
     let lastError: string | null = null;
 
     try {
@@ -85,7 +88,10 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
           const data = await res.json().catch(() => ({ error: "Upload failed" }));
           lastError = data.error ?? "Upload failed";
         } else {
-          successCount++;
+          const data = await res.json();
+          if (data.uploaded?.length > 0) successCount++;
+          if (data.duplicatesSkipped > 0)
+            totalDuplicatesSkipped += data.duplicatesSkipped;
         }
       }
 
@@ -94,11 +100,17 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
       }
 
       if (lastError) {
-        const failCount = files.length - successCount;
+        const failCount = files.length - successCount - totalDuplicatesSkipped;
         setError(
           failCount === files.length
             ? `Upload failed: ${lastError}`
             : `${failCount} of ${files.length} photos failed to upload`,
+        );
+      }
+
+      if (totalDuplicatesSkipped > 0) {
+        setDuplicateInfo(
+          `${totalDuplicatesSkipped} duplicate${totalDuplicatesSkipped === 1 ? "" : "s"} skipped`,
         );
       }
     } catch (err) {
@@ -140,6 +152,9 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
       </label>
       <canvas ref={canvasRef} className="hidden" />
       {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+      {duplicateInfo && (
+        <p className="mt-2 text-sm text-amber-400">{duplicateInfo}</p>
+      )}
     </div>
   );
 }

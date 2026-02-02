@@ -9,6 +9,7 @@ export interface Photo {
   aspect_ratio: number;
   blur_data: string | null;
   file_size: number | null;
+  content_hash: string | null;
   uploaded_at: Date;
 }
 
@@ -21,10 +22,11 @@ export async function insertPhoto(photo: {
   aspect_ratio: number;
   blur_data: string | null;
   file_size: number | null;
+  content_hash: string | null;
 }) {
   await sql`
-    INSERT INTO photos (id, filename, original_name, width, height, aspect_ratio, blur_data, file_size)
-    VALUES (${photo.id}, ${photo.filename}, ${photo.original_name}, ${photo.width}, ${photo.height}, ${photo.aspect_ratio}, ${photo.blur_data}, ${photo.file_size})
+    INSERT INTO photos (id, filename, original_name, width, height, aspect_ratio, blur_data, file_size, content_hash)
+    VALUES (${photo.id}, ${photo.filename}, ${photo.original_name}, ${photo.width}, ${photo.height}, ${photo.aspect_ratio}, ${photo.blur_data}, ${photo.file_size}, ${photo.content_hash})
   `;
 }
 
@@ -45,6 +47,13 @@ export async function getPhotoById(id: string) {
 export async function getPhotoByFilename(filename: string) {
   const result = await sql<Photo>`
     SELECT * FROM photos WHERE filename = ${filename}
+  `;
+  return result.rows[0] ?? null;
+}
+
+export async function getPhotoByHash(hash: string): Promise<Photo | null> {
+  const result = await sql<Photo>`
+    SELECT * FROM photos WHERE content_hash = ${hash}
   `;
   return result.rows[0] ?? null;
 }

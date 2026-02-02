@@ -1,8 +1,9 @@
+import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { generateId } from "@/src/lib/codes";
 import { savePhoto, deletePhotoFile } from "@/src/lib/storage";
-import { insertPhoto } from "@/src/db/photos";
+import { insertPhoto, getPhotoByHash } from "@/src/db/photos";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const uploaded = [];
+    let duplicatesSkipped = 0;
 
     for (const file of files) {
       if (!file.type.startsWith("image/")) {
@@ -22,6 +24,14 @@ export async function POST(request: NextRequest) {
 
       const rawBuffer = Buffer.from(await file.arrayBuffer());
       const rotated = await sharp(rawBuffer).rotate().toBuffer();
+
+      const contentHash = createHash("sha256").update(rotated).digest("hex");
+      const existing = await getPhotoByHash(contentHash);
+      if (existing) {
+        duplicatesSkipped++;
+        continue;
+      }
+
       const image = sharp(rotated);
       const metadata = await image.metadata();
 
@@ -55,6 +65,7 @@ export async function POST(request: NextRequest) {
           aspect_ratio: aspectRatio,
           blur_data: blurData,
           file_size: rotated.length,
+          content_hash: contentHash,
         });
       } catch (e) {
         await deletePhotoFile(filename);
@@ -64,7 +75,7 @@ export async function POST(request: NextRequest) {
       uploaded.push({ id, filename });
     }
 
-    return NextResponse.json({ uploaded });
+    return NextResponse.json({ uploaded, duplicatesSkipped });
   } catch (e) {
     console.error("Upload failed:", e);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });

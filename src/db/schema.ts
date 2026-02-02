@@ -42,6 +42,14 @@ export async function initializeDatabase() {
   `);
 
   await query(`
+    ALTER TABLE photos ADD COLUMN IF NOT EXISTS content_hash VARCHAR(64)
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_photos_content_hash ON photos(content_hash)
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS link_views (
       id SERIAL PRIMARY KEY,
       share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE CASCADE,
