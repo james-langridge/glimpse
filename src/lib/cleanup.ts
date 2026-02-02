@@ -1,5 +1,6 @@
 import { getPhotosForCleanup, deletePhoto } from "@/src/db/photos";
 import { setSetting } from "@/src/db/settings";
+import { getConfig } from "@/src/lib/config";
 import { deletePhotoFile } from "@/src/lib/storage";
 
 interface CleanupResult {
@@ -8,6 +9,11 @@ interface CleanupResult {
 }
 
 export async function runCleanup(): Promise<CleanupResult> {
+  const cleanupDays = parseInt(await getConfig("CLEANUP_DAYS"), 10);
+  if (cleanupDays === 0) {
+    return { deleted: [], errors: [] };
+  }
+
   const photos = await getPhotosForCleanup();
   const deleted: string[] = [];
   const errors: CleanupResult["errors"] = [];
