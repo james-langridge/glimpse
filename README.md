@@ -179,7 +179,7 @@ SITE_URL=https://photos.example.com
 CLEANUP_SECRET=another-random-secret
 
 # (Optional) Number of days before unlinked photos are eligible for cleanup
-# Defaults to 30 if not set
+# Defaults to 30 if not set. Set to 0 to disable cleanup entirely.
 CLEANUP_DAYS=30
 
 # (Optional) IANA timezone for displayed times, e.g. in OG previews
@@ -217,7 +217,7 @@ The production server runs on port 3000 by default. Use a reverse proxy (Nginx, 
 
 ### Photo Cleanup
 
-Glimpse includes an automatic cleanup endpoint that deletes photos older than `CLEANUP_DAYS` days (default 30) that aren't part of any active share link. Call it periodically with a cron job.
+Glimpse includes an automatic cleanup endpoint that deletes photos older than `CLEANUP_DAYS` days (default 30) that aren't part of any active share link. Set `CLEANUP_DAYS=0` to disable cleanup and store photos indefinitely. Call it periodically with a cron job.
 
 **Standard cron:**
 
