@@ -17,7 +17,15 @@ interface Photo {
   uploaded_at: string;
   view_count: number;
   link_count: number;
+  active_link_count: number;
 }
+
+type PhotoTab = "all" | "active";
+
+const tabs: { key: PhotoTab; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "active", label: "Active" },
+];
 
 export default function PhotosPage() {
   return (
@@ -32,6 +40,7 @@ function PhotosContent() {
   const searchParams = useSearchParams();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<PhotoTab>("all");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -59,6 +68,16 @@ function PhotosContent() {
   useEffect(() => {
     fetchPhotos();
   }, [fetchPhotos]);
+
+  const filtered =
+    tab === "all"
+      ? photos
+      : photos.filter((p) => p.active_link_count > 0);
+
+  const counts = {
+    all: photos.length,
+    active: photos.filter((p) => p.active_link_count > 0).length,
+  };
 
   function handleDelete(id: string) {
     setPhotos((prev) => prev.filter((p) => p.id !== id));
@@ -153,9 +172,29 @@ function PhotosContent() {
             </h1>
             <p className="mt-1 text-sm text-zinc-400">
               {photos.length} photo{photos.length !== 1 ? "s" : ""} in pool
+              {counts.active > 0 && `, ${counts.active} active`}
             </p>
           </div>
           <ImageUpload onUploadComplete={fetchPhotos} />
+        </div>
+
+        <div className="mb-6 flex gap-1 rounded-lg bg-zinc-900 p-1">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                tab === t.key
+                  ? "bg-zinc-800 text-white"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              {t.label}
+              <span className="ml-1.5 text-xs text-zinc-500">
+                {counts[t.key]}
+              </span>
+            </button>
+          ))}
         </div>
 
         <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -178,7 +217,7 @@ function PhotosContent() {
           {!selectionMode ? (
             <button
               onClick={() => setSelectionMode(true)}
-              disabled={photos.length === 0}
+              disabled={filtered.length === 0}
               className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white disabled:opacity-50"
             >
               Select
@@ -193,7 +232,7 @@ function PhotosContent() {
               </button>
               <button
                 onClick={() =>
-                  setSelectedIds(new Set(photos.map((p) => p.id)))
+                  setSelectedIds(new Set(filtered.map((p) => p.id)))
                 }
                 className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
               >
@@ -227,7 +266,7 @@ function PhotosContent() {
           </div>
         ) : (
           <PhotoGrid
-            photos={photos}
+            photos={filtered}
             onDelete={handleDelete}
             view={view}
             selectionMode={selectionMode}

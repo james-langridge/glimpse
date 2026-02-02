@@ -84,17 +84,24 @@ export async function getPhotosForCleanup() {
 export interface PhotoWithStats extends Photo {
   view_count: number;
   link_count: number;
+  active_link_count: number;
 }
 
 export async function getAllPhotosWithStats() {
   const result = await sql<
-    Photo & { view_count: string; link_count: string }
+    Photo & {
+      view_count: string;
+      link_count: string;
+      active_link_count: string;
+    }
   >`
     SELECT p.*,
       COUNT(DISTINCT lv.id)::text AS view_count,
-      COUNT(DISTINCT slp.share_link_id)::text AS link_count
+      COUNT(DISTINCT slp.share_link_id)::text AS link_count,
+      COUNT(DISTINCT CASE WHEN sl.revoked = FALSE AND sl.expires_at > NOW() THEN slp.share_link_id END)::text AS active_link_count
     FROM photos p
     LEFT JOIN share_link_photos slp ON slp.photo_id = p.id
+    LEFT JOIN share_links sl ON sl.id = slp.share_link_id
     LEFT JOIN link_views lv ON lv.share_link_id = slp.share_link_id
     GROUP BY p.id
     ORDER BY p.uploaded_at DESC
@@ -103,6 +110,7 @@ export async function getAllPhotosWithStats() {
     ...row,
     view_count: parseInt(row.view_count, 10),
     link_count: parseInt(row.link_count, 10),
+    active_link_count: parseInt(row.active_link_count, 10),
   }));
 }
 
