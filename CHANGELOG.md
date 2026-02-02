@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-02-02
+
+### Added
+
+- Admin settings page for runtime configuration
+- Built-in cleanup scheduler with last run display
+- Bulk photo selection and deletion
+- Duplicate link feature
+- Duplicate photo upload detection via SHA-256 hash
+- Active, Inactive, and All filter tabs on photos page
+- Cleanup days setting display on photos page
+
+### Changed
+
+- Upload photos individually to avoid body size limit
+- Allow `CLEANUP_DAYS=0` to disable photo cleanup entirely
+- Move delete button above share links table on photo detail page
+- Move link actions above photos on link detail page
+- Point About Glimpse link to marketing page
+
+### Fixed
+
+- Race condition in duplicate photo detection
+- Negative duration when duplicating links
+- PWA login persistence via session cookie maxAge
+- Photo selection not clearing when switching filter tabs
+
 ## [0.4.0] - 2026-02-01
 
 ### Added
@@ -91,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 Initial public release.
 
+[0.5.0]: https://github.com/james-langridge/glimpse/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/james-langridge/glimpse/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/james-langridge/glimpse/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/james-langridge/glimpse/compare/v0.1.0...v0.2.0
