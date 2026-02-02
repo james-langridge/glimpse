@@ -46,7 +46,11 @@ export async function initializeDatabase() {
   `);
 
   await query(`
-    CREATE INDEX IF NOT EXISTS idx_photos_content_hash ON photos(content_hash)
+    DROP INDEX IF EXISTS idx_photos_content_hash
+  `);
+
+  await query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_photos_content_hash ON photos(content_hash)
   `);
 
   await query(`

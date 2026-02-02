@@ -23,11 +23,13 @@ export async function insertPhoto(photo: {
   blur_data: string | null;
   file_size: number | null;
   content_hash: string | null;
-}) {
-  await sql`
+}): Promise<boolean> {
+  const result = await sql`
     INSERT INTO photos (id, filename, original_name, width, height, aspect_ratio, blur_data, file_size, content_hash)
     VALUES (${photo.id}, ${photo.filename}, ${photo.original_name}, ${photo.width}, ${photo.height}, ${photo.aspect_ratio}, ${photo.blur_data}, ${photo.file_size}, ${photo.content_hash})
+    ON CONFLICT (content_hash) DO NOTHING
   `;
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function getAllPhotos() {

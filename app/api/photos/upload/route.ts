@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
       await savePhoto(filename, rotated);
       try {
-        await insertPhoto({
+        const inserted = await insertPhoto({
           id,
           filename,
           original_name: file.name,
@@ -67,6 +67,11 @@ export async function POST(request: NextRequest) {
           file_size: rotated.length,
           content_hash: contentHash,
         });
+        if (!inserted) {
+          await deletePhotoFile(filename);
+          duplicatesSkipped++;
+          continue;
+        }
       } catch (e) {
         await deletePhotoFile(filename);
         throw e;
