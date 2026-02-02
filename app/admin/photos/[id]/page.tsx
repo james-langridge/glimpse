@@ -184,6 +184,17 @@ export default function PhotoDetailPage() {
           </div>
         </div>
 
+        {/* Actions */}
+        <div className="mb-8 flex gap-3">
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="rounded-lg bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-600/30 disabled:opacity-50"
+          >
+            {deleting ? "Deleting..." : "Delete Photo"}
+          </button>
+        </div>
+
         {/* Links section */}
         <div className="mb-8">
           <h2 className="mb-3 text-sm font-medium text-zinc-300">
@@ -249,16 +260,6 @@ export default function PhotoDetailPage() {
           <PhotoAnalytics photoId={photo.id} />
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 border-t border-zinc-800 pt-6">
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="rounded-lg bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-600/30 disabled:opacity-50"
-          >
-            {deleting ? "Deleting..." : "Delete Photo"}
-          </button>
-        </div>
       </div>
     </div>
   );
