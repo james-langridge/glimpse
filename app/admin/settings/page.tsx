@@ -34,8 +34,10 @@ export default function SettingsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successes, setSuccesses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   const fetchSettings = useCallback(async () => {
+    setFetchError(false);
     try {
       const res = await fetch("/api/settings");
       if (res.ok) {
@@ -46,9 +48,11 @@ export default function SettingsPage() {
           newInputs[s.key] = s.dbValue ?? "";
         }
         setInputs(newInputs);
+      } else {
+        setFetchError(true);
       }
     } catch {
-      // ignore
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -73,10 +77,12 @@ export default function SettingsPage() {
       if (!res.ok) {
         setErrors((prev) => ({ ...prev, [key]: data.error }));
       } else {
-        setSuccesses((prev) => ({
-          ...prev,
-          [key]: data.action === "reset" ? "Reset to default" : "Saved",
-        }));
+        const msg = data.action === "reset" ? "Reset to default" : "Saved";
+        setSuccesses((prev) => ({ ...prev, [key]: msg }));
+        setTimeout(
+          () => setSuccesses((prev) => ({ ...prev, [key]: "" })),
+          3000,
+        );
         await fetchSettings();
       }
     } catch {
@@ -103,6 +109,10 @@ export default function SettingsPage() {
         setErrors((prev) => ({ ...prev, [key]: data.error }));
       } else {
         setSuccesses((prev) => ({ ...prev, [key]: "Reset to default" }));
+        setTimeout(
+          () => setSuccesses((prev) => ({ ...prev, [key]: "" })),
+          3000,
+        );
         await fetchSettings();
       }
     } catch {
@@ -128,6 +138,29 @@ export default function SettingsPage() {
             </h1>
           </div>
           <p className="text-sm text-zinc-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="px-6 py-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-8">
+            <h1 className="text-2xl font-light tracking-widest text-white">
+              SETTINGS
+            </h1>
+          </div>
+          <p className="text-sm text-red-400">
+            Failed to load settings. Please try again.
+          </p>
+          <button
+            onClick={fetchSettings}
+            className="mt-3 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition hover:bg-zinc-600"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );

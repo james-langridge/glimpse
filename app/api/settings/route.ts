@@ -1,21 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllSettings, setSetting, deleteSetting } from "@/src/db/settings";
-
-const VALID_KEYS = ["CLEANUP_DAYS", "DISPLAY_TIMEZONE", "SITE_URL"] as const;
-type SettingKey = (typeof VALID_KEYS)[number];
-
-const DEFAULTS: Record<SettingKey, string> = {
-  CLEANUP_DAYS: "30",
-  DISPLAY_TIMEZONE: "",
-  SITE_URL: "",
-};
-
-function isValidKey(key: string): key is SettingKey {
-  return (VALID_KEYS as readonly string[]).includes(key);
-}
+import { VALID_KEYS, DEFAULTS, isValidKey, ConfigKey } from "@/src/lib/config";
 
 function validate(
-  key: SettingKey,
+  key: ConfigKey,
   value: string,
 ): { valid: true } | { valid: false; error: string } {
   switch (key) {
@@ -36,7 +24,10 @@ function validate(
     }
     case "SITE_URL": {
       try {
-        new URL(value);
+        const url = new URL(value);
+        if (!["http:", "https:"].includes(url.protocol)) {
+          return { valid: false, error: "URL must use http or https" };
+        }
         return { valid: true };
       } catch {
         return { valid: false, error: "Invalid URL" };
@@ -72,7 +63,10 @@ export async function PUT(request: NextRequest) {
     const { key, value } = body;
 
     if (typeof key !== "string" || !isValidKey(key)) {
-      return NextResponse.json({ error: "Invalid setting key" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid setting key" },
+        { status: 400 },
+      );
     }
 
     const trimmed = typeof value === "string" ? value.trim() : "";

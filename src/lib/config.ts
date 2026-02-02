@@ -1,34 +1,40 @@
-import { getSetting } from "@/src/db/settings";
+import { getAllSettings } from "@/src/db/settings";
 
-type ConfigKey = "CLEANUP_DAYS" | "DISPLAY_TIMEZONE" | "SITE_URL";
+export const VALID_KEYS = [
+  "CLEANUP_DAYS",
+  "DISPLAY_TIMEZONE",
+  "SITE_URL",
+] as const;
 
-const DEFAULTS: Record<ConfigKey, string> = {
+export type ConfigKey = (typeof VALID_KEYS)[number];
+
+export const DEFAULTS: Record<ConfigKey, string> = {
   CLEANUP_DAYS: "30",
   DISPLAY_TIMEZONE: "",
   SITE_URL: "",
 };
 
+export function isValidKey(key: string): key is ConfigKey {
+  return (VALID_KEYS as readonly string[]).includes(key);
+}
+
+let cache: { data: Record<string, string>; ts: number } | null = null;
+const TTL = 60_000;
+
+async function getCachedSettings(): Promise<Record<string, string>> {
+  if (cache && Date.now() - cache.ts < TTL) return cache.data;
+  const data = await getAllSettings();
+  cache = { data, ts: Date.now() };
+  return data;
+}
+
 export async function getConfig(key: ConfigKey): Promise<string> {
-  const dbValue = await getSetting(key);
-  if (dbValue !== null) return dbValue;
+  const settings = await getCachedSettings();
+  const dbValue = settings[key];
+  if (dbValue !== undefined) return dbValue;
 
   const envValue = process.env[key];
   if (envValue !== undefined && envValue !== "") return envValue;
 
   return DEFAULTS[key];
-}
-
-export type ConfigSource = "db" | "env" | "default";
-
-export async function getConfigWithSource(
-  key: ConfigKey,
-): Promise<{ value: string; source: ConfigSource }> {
-  const dbValue = await getSetting(key);
-  if (dbValue !== null) return { value: dbValue, source: "db" };
-
-  const envValue = process.env[key];
-  if (envValue !== undefined && envValue !== "")
-    return { value: envValue, source: "env" };
-
-  return { value: DEFAULTS[key], source: "default" };
 }
