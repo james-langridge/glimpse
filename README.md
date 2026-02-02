@@ -27,7 +27,7 @@ Unlike sharing photos through social media, messaging apps, or cloud storage ser
 - **Links expire automatically.** Every share link has an expiry date. Once it passes, the photos can't be accessed anymore. No "shared with link" that lives forever.
 - **You can revoke access instantly.** Changed your mind? Revoke a link and it stops working immediately.
 - **No viewer accounts.** The people you share with don't need to create accounts, hand over their email address, or download an app. Less data floating around means less risk.
-- **Photos are cleaned up automatically.** Photos that aren't part of any active share link are automatically deleted after a configurable number of days (default 30). Nothing lingers on the server forgotten.
+- **Photos are cleaned up automatically.** Photos that aren't part of any active share link are automatically deleted after a configurable number of days (default 30). Cleanup runs on a built-in scheduler — no cron job required. Nothing lingers on the server forgotten.
 - **Download protection.** The gallery viewer prevents casual right-click saving and image dragging. (This won't stop a determined technical user, but it discourages casual copying.)
 - **No tracking by third parties.** Glimpse doesn't embed analytics scripts, social media pixels, or advertising trackers. The built-in analytics use IP hashing so even the server admin can't see the real IP addresses of viewers.
 - **Password-protected admin.** Only someone with the admin password can upload photos, create links, or view analytics. The login is rate-limited to prevent brute-force attacks.
@@ -86,7 +86,7 @@ src/
 - Side effects (file I/O, auth) live in `src/lib/`
 - React Server Components handle data fetching; Client Components handle interactivity
 - Photos are stored on the filesystem, metadata in PostgreSQL
-- The database schema auto-initializes on server startup via `instrumentation.ts`
+- The database schema auto-initializes on server startup via `instrumentation.ts`, which also schedules automatic photo cleanup
 
 ### Database Schema
 
@@ -175,7 +175,8 @@ PHOTO_STORAGE_PATH=/data/photos
 # Base URL of your Glimpse instance (used for generating share links)
 SITE_URL=https://photos.example.com
 
-# Secret token for the cleanup endpoint (called by cron)
+# (Optional) Secret token for the cleanup API endpoint
+# Only needed if you want to trigger cleanup externally (e.g., via cron)
 CLEANUP_SECRET=another-random-secret
 
 # (Optional) Number of days before unlinked photos are eligible for cleanup
@@ -217,19 +218,21 @@ The production server runs on port 3000 by default. Use a reverse proxy (Nginx, 
 
 ### Photo Cleanup
 
-Glimpse includes an automatic cleanup endpoint that deletes photos older than `CLEANUP_DAYS` days (default 30) that aren't part of any active share link. Set `CLEANUP_DAYS=0` to disable cleanup and store photos indefinitely. Call it periodically with a cron job.
+Glimpse automatically cleans up photos that are older than `CLEANUP_DAYS` days (default 30) and aren't part of any active share link. Set `CLEANUP_DAYS=0` to disable cleanup and store photos indefinitely.
 
-**Standard cron:**
+**Built-in scheduler (default):** Cleanup runs automatically — 60 seconds after server startup, then every 24 hours. No configuration needed. The last cleanup time is shown on the admin photos page.
+
+**External trigger (optional):** You can also trigger cleanup manually or via cron using the API endpoint. This requires setting the `CLEANUP_SECRET` environment variable.
 
 ```bash
-# Run cleanup daily at 3 AM
-0 3 * * * curl -sf -X POST https://photos.example.com/api/cleanup \
+# Run cleanup on demand
+curl -sf -X POST https://photos.example.com/api/cleanup \
   -H "Authorization: Bearer YOUR_CLEANUP_SECRET"
 ```
 
-**Railway:**
+**Railway (optional):**
 
-The repo includes a `Dockerfile.cleanup` for running cleanup as a scheduled Railway service:
+The repo includes a `Dockerfile.cleanup` for running cleanup as a separate scheduled Railway service. This is no longer required since cleanup runs on the built-in scheduler, but it remains available if you prefer external scheduling:
 
 1. Add a new service in your Railway project pointing at this repo
 2. Set the Dockerfile path to `Dockerfile.cleanup`
