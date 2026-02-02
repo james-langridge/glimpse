@@ -28,6 +28,17 @@ const tabs: { key: PhotoTab; label: string }[] = [
   { key: "inactive", label: "Inactive" },
 ];
 
+function filterPhotos(photos: Photo[], tab: PhotoTab): Photo[] {
+  switch (tab) {
+    case "all":
+      return photos;
+    case "active":
+      return photos.filter((p) => p.active_link_count > 0);
+    case "inactive":
+      return photos.filter((p) => p.active_link_count === 0);
+  }
+}
+
 export default function PhotosPage() {
   return (
     <Suspense>
@@ -70,17 +81,13 @@ function PhotosContent() {
     fetchPhotos();
   }, [fetchPhotos]);
 
-  const filtered =
-    tab === "all"
-      ? photos
-      : tab === "active"
-        ? photos.filter((p) => p.active_link_count > 0)
-        : photos.filter((p) => p.active_link_count === 0);
+  const filtered = filterPhotos(photos, tab);
 
+  const activeCount = photos.filter((p) => p.active_link_count > 0).length;
   const counts = {
     all: photos.length,
-    active: photos.filter((p) => p.active_link_count > 0).length,
-    inactive: photos.filter((p) => p.active_link_count === 0).length,
+    active: activeCount,
+    inactive: photos.length - activeCount,
   };
 
   function handleDelete(id: string) {
