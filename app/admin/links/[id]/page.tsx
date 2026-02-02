@@ -354,6 +354,30 @@ export default function LinkDetailPage() {
           </div>
         </div>
 
+        {/* Actions */}
+        <div className="mb-8 flex gap-3">
+          <button
+            onClick={handleDuplicate}
+            className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-400 transition hover:bg-indigo-600/30"
+          >
+            Duplicate Link
+          </button>
+          {link.status === "active" && (
+            <button
+              onClick={handleRevoke}
+              className="rounded-lg bg-amber-600/20 px-4 py-2 text-sm font-medium text-amber-400 transition hover:bg-amber-600/30"
+            >
+              Revoke Link
+            </button>
+          )}
+          <button
+            onClick={handleDelete}
+            className="rounded-lg bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-600/30"
+          >
+            Delete Link
+          </button>
+        </div>
+
         {/* Photos */}
         <div className="mb-8">
           <div className="mb-3 flex items-center justify-between">
@@ -435,30 +459,6 @@ export default function LinkDetailPage() {
         <div className="mb-8">
           <h2 className="mb-3 text-sm font-medium text-zinc-300">Analytics</h2>
           <LinkAnalytics linkId={link.id} />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 border-t border-zinc-800 pt-6">
-          <button
-            onClick={handleDuplicate}
-            className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-400 transition hover:bg-indigo-600/30"
-          >
-            Duplicate Link
-          </button>
-          {link.status === "active" && (
-            <button
-              onClick={handleRevoke}
-              className="rounded-lg bg-amber-600/20 px-4 py-2 text-sm font-medium text-amber-400 transition hover:bg-amber-600/30"
-            >
-              Revoke Link
-            </button>
-          )}
-          <button
-            onClick={handleDelete}
-            className="rounded-lg bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-600/30"
-          >
-            Delete Link
-          </button>
         </div>
       </div>
     </div>
