@@ -26,6 +26,14 @@ export async function POST(
     const duration =
       new Date(link.expires_at).getTime() -
       new Date(link.created_at).getTime();
+
+    if (duration <= 0) {
+      return NextResponse.json(
+        { error: "Cannot duplicate: link has invalid duration" },
+        { status: 400 },
+      );
+    }
+
     const newExpiry = new Date(Date.now() + duration);
 
     let code = generateShareCode();
