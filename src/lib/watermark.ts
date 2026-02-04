@@ -341,6 +341,20 @@ export async function embedWatermark(
   embedDCTWatermark(data, width, height, channels, downloadId, dctSeed);
   embedPixelWatermark(data, width, height, channels, downloadId, seed);
 
+  // Verify QIM on raw pixels (before lossy encoding) to confirm embed is correct
+  const rawPixelCheck = extractPixelWatermark(
+    data,
+    width,
+    height,
+    channels,
+    seed,
+  );
+  if (rawPixelCheck !== downloadId) {
+    throw new Error(
+      `Pixel watermark embed failed: expected ${downloadId}, got ${rawPixelCheck}`,
+    );
+  }
+
   const tag = `glimpse:dl:${downloadId}`;
   const pipeline = sharp(data, {
     raw: { width, height, channels },
@@ -363,23 +377,13 @@ export async function embedWatermark(
       break;
   }
 
-  // Verify both watermarks survived encoding
+  // Verify DCT survived encoding (designed for lossy robustness).
+  // QIM pixel watermark may not survive lossy re-encoding — that's expected
+  // and why we added the DCT layer.
   const verifyRaw = await sharp(result)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  const extractedPixel = extractPixelWatermark(
-    verifyRaw.data,
-    verifyRaw.info.width,
-    verifyRaw.info.height,
-    verifyRaw.info.channels,
-    seed,
-  );
-  if (extractedPixel !== downloadId) {
-    throw new Error(
-      `Pixel watermark verification failed: expected ${downloadId}, got ${extractedPixel}`,
-    );
-  }
   const extractedDCT = extractDCTWatermark(
     verifyRaw.data,
     verifyRaw.info.width,
