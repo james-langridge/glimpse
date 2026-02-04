@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import PhotoSelector from "@/src/components/PhotoSelector";
 
 const EXPIRY_OPTIONS = [
@@ -13,8 +13,20 @@ const EXPIRY_OPTIONS = [
 ];
 
 export default function NewLinkPage() {
+  return (
+    <Suspense>
+      <NewLinkContent />
+    </Suspense>
+  );
+}
+
+function NewLinkContent() {
   const router = useRouter();
-  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const searchParams = useSearchParams();
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>(() => {
+    const photosParam = searchParams.get("photos");
+    return photosParam ? photosParam.split(",").filter(Boolean) : [];
+  });
   const [expiryMs, setExpiryMs] = useState(7 * 24 * 60 * 60 * 1000);
   const [customExpiry, setCustomExpiry] = useState("");
   const [title, setTitle] = useState("");

@@ -326,6 +326,17 @@ function PhotosContent() {
                   ? "Deleting..."
                   : `Delete (${selectedIds.size})`}
               </button>
+              <button
+                onClick={() =>
+                  router.push(
+                    `/admin/links/new?photos=${encodeURIComponent(Array.from(selectedIds).join(","))}`,
+                  )
+                }
+                disabled={selectedIds.size === 0}
+                className="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-200 disabled:opacity-50"
+              >
+                Create Link ({selectedIds.size})
+              </button>
             </>
           )}
         </div>
