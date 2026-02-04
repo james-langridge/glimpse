@@ -35,7 +35,7 @@ export async function getDownloadCountForLink(
   }>(
     `SELECT
       COUNT(*) as total_downloads,
-      COUNT(DISTINCT ip_hash) as unique_downloaders
+      COUNT(DISTINCT COALESCE(ip_hash, 'unknown')) as unique_downloaders
      FROM photo_downloads
      WHERE ${conditions.join(" AND ")}`,
     values,

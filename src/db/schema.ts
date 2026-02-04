@@ -97,4 +97,8 @@ export async function initializeDatabase() {
       os VARCHAR(100)
     )
   `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_photo_downloads_link ON photo_downloads(share_link_id, downloaded_at DESC)
+  `);
 }

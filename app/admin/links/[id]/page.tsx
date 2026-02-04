@@ -203,7 +203,12 @@ export default function LinkDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ allowDownloads: !link.allow_downloads }),
       });
-      if (res.ok) fetchLink();
+      if (res.ok) {
+        fetchLink();
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error ?? "Failed to update download setting");
+      }
     } finally {
       setTogglingDownloads(false);
     }

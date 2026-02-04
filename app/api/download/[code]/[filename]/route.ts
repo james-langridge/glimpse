@@ -69,12 +69,13 @@ export async function GET(
 
     const data = await readPhoto(photo.filename);
     const downloadName = photo.original_name ?? photo.filename;
+    const safeName = downloadName.replace(/["\r\n]/g, "_");
 
     return new NextResponse(new Uint8Array(data), {
       headers: {
         "Content-Type": mimeType(photo.filename),
         "Content-Length": String(data.length),
-        "Content-Disposition": `attachment; filename="${downloadName}"`,
+        "Content-Disposition": `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(downloadName)}`,
         "Cache-Control": "no-store",
       },
     });
