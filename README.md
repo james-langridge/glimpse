@@ -29,6 +29,7 @@ Unlike sharing photos through social media, messaging apps, or cloud storage ser
 - **No viewer accounts.** The people you share with don't need to create accounts, hand over their email address, or download an app. Less data floating around means less risk.
 - **Photos are cleaned up automatically.** Photos that aren't part of any active share link are automatically deleted after a configurable number of days (default 30). Cleanup runs on a built-in scheduler — no cron job required. Nothing lingers on the server forgotten.
 - **Download protection.** The gallery viewer prevents casual right-click saving and image dragging. (This won't stop a determined technical user, but it discourages casual copying.)
+- **Invisible watermarking.** When photos are downloaded through a share link, Glimpse embeds three layers of invisible watermark: EXIF metadata (survives lossless operations), QIM pixel-domain (survives format conversion), and DCT frequency-domain (survives JPEG re-compression and mild resizing). Each watermark encodes the download ID, so leaked photos can be traced back to the specific download event. The admin panel includes a watermark extraction tool to check any image.
 - **No tracking by third parties.** Glimpse doesn't embed analytics scripts, social media pixels, or advertising trackers. The built-in analytics use IP hashing so even the server admin can't see the real IP addresses of viewers.
 - **Password-protected admin.** Only someone with the admin password can upload photos, create links, or view analytics. The login is rate-limited to prevent brute-force attacks.
 
@@ -107,6 +108,7 @@ All foreign keys use `ON DELETE CASCADE`.
 |--------|------|---------|
 | POST | `/api/lookup/[code]` | Validate a share code |
 | GET | `/api/shared-image/[code]/[filename]` | Serve a photo from an active link |
+| GET | `/api/download/[code]/[filename]` | Download a watermarked photo from an active link |
 | POST | `/api/analytics/duration` | Record session duration (beacon) |
 
 **Admin (session required):**
@@ -125,6 +127,7 @@ All foreign keys use `ON DELETE CASCADE`.
 | DELETE | `/api/links/[id]` | Delete a link |
 | PATCH | `/api/links/[id]/revoke` | Revoke a link |
 | GET | `/api/analytics` | Fetch analytics data |
+| POST | `/api/photos/watermark/extract` | Extract watermark from an uploaded image |
 
 **System:**
 
@@ -144,6 +147,14 @@ All foreign keys use `ON DELETE CASCADE`.
 ### Image Processing
 
 On upload, Sharp extracts image dimensions and generates a 20x20px blur placeholder (base64 JPEG). The blur data is stored in the database and rendered as a CSS background while the full-resolution image loads. Photos are served with 1-hour cache headers.
+
+On download, photos are watermarked with three layers of increasing robustness:
+
+1. **EXIF metadata** — `ImageDescription` tag with the download ID. Instant to read, stripped by re-saving.
+2. **QIM pixel-domain** — Quantization Index Modulation on the blue channel of 120 PRNG-selected pixels. Survives lossless operations, destroyed by JPEG re-compression.
+3. **DCT frequency-domain** — 2D Discrete Cosine Transform on 120 random 8×8 luminance blocks, modifying a mid-frequency coefficient. Survives JPEG re-compression at quality 70+ and mild resizing.
+
+Extraction tries each layer in order (cheapest first) and returns the first successful match. All watermark logic is in `src/lib/watermark.ts` with no external dependencies beyond Sharp.
 
 ---
 
