@@ -238,6 +238,11 @@ function embedDCTWatermark(
   const blocksX = Math.floor(width / BLOCK_SIZE);
   const blocksY = Math.floor(height / BLOCK_SIZE);
   const totalBlocks = blocksX * blocksY;
+  if (totalBlocks < BLOCKS_NEEDED) {
+    throw new Error(
+      `Image too small for DCT watermark: need ${BLOCKS_NEEDED} blocks, have ${totalBlocks}`,
+    );
+  }
   const blockIndices = prngSequence(seed, BLOCKS_NEEDED, totalBlocks);
   const payload = buildPayload(downloadId);
 
