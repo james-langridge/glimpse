@@ -74,6 +74,100 @@ function comparePhotos(a: Photo, b: Photo, key: SortKey): number {
   }
 }
 
+function PhotoCard({
+  photo,
+  selectionMode,
+  isSelected,
+  onToggleSelect,
+  onDelete,
+  deleting,
+}: {
+  photo: Photo;
+  selectionMode?: boolean;
+  isSelected: boolean;
+  onToggleSelect?: (id: string) => void;
+  onDelete: (id: string) => void;
+  deleting: boolean;
+}) {
+  const router = useRouter();
+
+  return (
+    <div
+      className={`cursor-pointer rounded-lg border bg-zinc-900/50 p-4 transition ${
+        isSelected
+          ? "border-blue-500 bg-blue-500/5"
+          : "border-zinc-800 hover:border-zinc-700"
+      }`}
+      onClick={() =>
+        selectionMode
+          ? onToggleSelect?.(photo.id)
+          : router.push(`/admin/photos/${photo.id}`)
+      }
+    >
+      <div className="flex items-center gap-3">
+        {selectionMode && (
+          <div
+            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+              isSelected
+                ? "border-blue-500 bg-blue-500"
+                : "border-zinc-600 bg-zinc-800"
+            }`}
+          >
+            {isSelected && <Checkmark />}
+          </div>
+        )}
+        <img
+          src={`/api/photos/${photo.id}/image?w=400`}
+          alt={photo.original_name ?? photo.filename}
+          className="h-12 w-12 shrink-0 rounded object-cover"
+          loading="lazy"
+        />
+        <p className="min-w-0 truncate text-sm text-zinc-300">
+          {photo.original_name ?? photo.filename}
+        </p>
+        {!selectionMode && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(photo.id);
+            }}
+            disabled={deleting}
+            className="ml-auto shrink-0 rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+          >
+            {deleting ? "..." : "Delete"}
+          </button>
+        )}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <span className="text-zinc-500">Dimensions</span>
+          <p className="text-zinc-300">
+            {formatDimensions(photo.width, photo.height) || "—"}
+          </p>
+        </div>
+        <div>
+          <span className="text-zinc-500">Size</span>
+          <p className="text-zinc-300">
+            {formatBytes(photo.file_size) || "—"}
+          </p>
+        </div>
+        <div>
+          <span className="text-zinc-500">Views</span>
+          <p className="text-zinc-300">{photo.view_count}</p>
+        </div>
+        <div>
+          <span className="text-zinc-500">Links</span>
+          <p className="text-zinc-300">{photo.link_count}</p>
+        </div>
+        <div className="col-span-2">
+          <span className="text-zinc-500">Uploaded</span>
+          <p className="text-zinc-400">{formatDate(photo.uploaded_at)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Checkmark({ className }: { className?: string }) {
   return (
     <svg
@@ -177,93 +271,21 @@ export default function PhotoGrid({
     { key: "uploaded", label: "Uploaded" },
   ];
 
-  function PhotoCard({ photo }: { photo: Photo }) {
-    const isSelected = selectionMode && selectedIds?.has(photo.id);
-
-    return (
-      <div
-        className={`cursor-pointer rounded-lg border bg-zinc-900/50 p-4 transition ${
-          isSelected
-            ? "border-blue-500 bg-blue-500/5"
-            : "border-zinc-800 hover:border-zinc-700"
-        }`}
-        onClick={() =>
-          selectionMode
-            ? onToggleSelect?.(photo.id)
-            : router.push(`/admin/photos/${photo.id}`)
-        }
-      >
-        <div className="flex items-center gap-3">
-          {selectionMode && (
-            <div
-              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
-                isSelected
-                  ? "border-blue-500 bg-blue-500"
-                  : "border-zinc-600 bg-zinc-800"
-              }`}
-            >
-              {isSelected && <Checkmark />}
-            </div>
-          )}
-          <img
-            src={`/api/photos/${photo.id}/image?w=400`}
-            alt={photo.original_name ?? photo.filename}
-            className="h-12 w-12 shrink-0 rounded object-cover"
-            loading="lazy"
-          />
-          <p className="min-w-0 truncate text-sm text-zinc-300">
-            {photo.original_name ?? photo.filename}
-          </p>
-          {!selectionMode && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(photo.id);
-              }}
-              disabled={deleting === photo.id}
-              className="ml-auto shrink-0 rounded bg-red-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
-            >
-              {deleting === photo.id ? "..." : "Delete"}
-            </button>
-          )}
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <span className="text-zinc-500">Dimensions</span>
-            <p className="text-zinc-300">
-              {formatDimensions(photo.width, photo.height) || "—"}
-            </p>
-          </div>
-          <div>
-            <span className="text-zinc-500">Size</span>
-            <p className="text-zinc-300">
-              {formatBytes(photo.file_size) || "—"}
-            </p>
-          </div>
-          <div>
-            <span className="text-zinc-500">Views</span>
-            <p className="text-zinc-300">{photo.view_count}</p>
-          </div>
-          <div>
-            <span className="text-zinc-500">Links</span>
-            <p className="text-zinc-300">{photo.link_count}</p>
-          </div>
-          <div className="col-span-2">
-            <span className="text-zinc-500">Uploaded</span>
-            <p className="text-zinc-400">{formatDate(photo.uploaded_at)}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (view === "table") {
     return (
       <>
         {/* Mobile: card layout */}
         <div className="flex flex-col gap-3 md:hidden">
           {sorted.map((photo) => (
-            <PhotoCard key={photo.id} photo={photo} />
+            <PhotoCard
+              key={photo.id}
+              photo={photo}
+              selectionMode={selectionMode}
+              isSelected={!!selectionMode && !!selectedIds?.has(photo.id)}
+              onToggleSelect={onToggleSelect}
+              onDelete={handleDelete}
+              deleting={deleting === photo.id}
+            />
           ))}
         </div>
 

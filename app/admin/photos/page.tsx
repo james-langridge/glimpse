@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ImageUpload from "@/src/components/ImageUpload";
 import PhotoGrid from "@/src/components/PhotoGrid";
@@ -130,7 +130,7 @@ function PhotosContent() {
     setPhotos((prev) => prev.filter((p) => p.id !== id));
   }
 
-  function handleToggleSelect(id: string) {
+  const handleToggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -140,7 +140,7 @@ function PhotosContent() {
       }
       return next;
     });
-  }
+  }, []);
 
   function handleCancelSelection() {
     setSelectionMode(false);
