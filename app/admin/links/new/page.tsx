@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PhotoSelector from "@/src/components/PhotoSelector";
+import Spinner from "@/src/components/Spinner";
 
 const EXPIRY_OPTIONS = [
   { label: "1 hour", ms: 1 * 60 * 60 * 1000 },
@@ -17,7 +18,7 @@ export default function NewLinkPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center px-6 py-16">
-          <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
+          <Spinner />
         </div>
       }
     >

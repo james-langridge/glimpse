@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ImageUpload from "@/src/components/ImageUpload";
 import PhotoGrid from "@/src/components/PhotoGrid";
+import Spinner from "@/src/components/Spinner";
 
 interface Photo {
   id: string;
@@ -44,7 +45,7 @@ export default function PhotosPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center px-6 py-16">
-          <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
+          <Spinner />
         </div>
       }
     >
@@ -349,7 +350,7 @@ function PhotosContent() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
+            <Spinner />
           </div>
         ) : (
           <PhotoGrid

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import PhotoSelector from "@/src/components/PhotoSelector";
+import Spinner from "@/src/components/Spinner";
 import LinkAnalytics from "@/src/components/LinkAnalytics";
 
 interface Photo {
@@ -194,7 +195,7 @@ export default function LinkDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
+        <Spinner />
       </div>
     );
   }

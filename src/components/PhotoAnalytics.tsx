@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Spinner from "@/src/components/Spinner";
 import {
   LineChart,
   Line,
@@ -323,7 +324,7 @@ export default function PhotoAnalytics({ photoId }: { photoId: string }) {
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="h-6 w-6 animate-spin-slow rounded-full border-2 border-zinc-700 border-t-zinc-400" />
+        <Spinner />
       </div>
     );
   }
@@ -358,7 +359,7 @@ export default function PhotoAnalytics({ photoId }: { photoId: string }) {
           ))}
         </div>
         {loading && (
-          <div className="h-4 w-4 animate-spin-slow rounded-full border-2 border-zinc-700 border-t-zinc-400" />
+          <Spinner size="sm" />
         )}
       </div>
 

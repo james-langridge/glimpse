@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import LinkTable from "@/src/components/LinkTable";
+import Spinner from "@/src/components/Spinner";
 
 type Status = "active" | "expired" | "revoked";
 
@@ -96,7 +97,7 @@ export default function LinksPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
+            <Spinner />
           </div>
         ) : (
           <LinkTable links={filtered} />
