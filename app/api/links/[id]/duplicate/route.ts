@@ -54,8 +54,8 @@ export async function POST(
 
     await withTransaction(async (client) => {
       await client.query(
-        "INSERT INTO share_links (id, code, title, expires_at) VALUES ($1, $2, $3, $4)",
-        [newId, code, linkTitle, newExpiry.toISOString()],
+        "INSERT INTO share_links (id, code, title, allow_downloads, expires_at) VALUES ($1, $2, $3, $4, $5)",
+        [newId, code, linkTitle, link.allow_downloads, newExpiry.toISOString()],
       );
       for (let i = 0; i < photos.length; i++) {
         await client.query(

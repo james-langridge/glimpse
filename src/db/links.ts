@@ -5,6 +5,7 @@ export interface ShareLink {
   id: string;
   code: string;
   title: string | null;
+  allow_downloads: boolean;
   expires_at: Date;
   revoked: boolean;
   revoked_at: Date | null;
@@ -55,7 +56,7 @@ export async function getLinkByCode(code: string) {
 
 export async function updateLink(
   id: string,
-  updates: { expires_at?: Date; title?: string | null },
+  updates: { expires_at?: Date; title?: string | null; allow_downloads?: boolean },
 ) {
   if (updates.expires_at) {
     await sql`
@@ -68,6 +69,13 @@ export async function updateLink(
     await sql`
       UPDATE share_links
       SET title = ${updates.title}, updated_at = NOW()
+      WHERE id = ${id}
+    `;
+  }
+  if (updates.allow_downloads !== undefined) {
+    await sql`
+      UPDATE share_links
+      SET allow_downloads = ${updates.allow_downloads}, updated_at = NOW()
       WHERE id = ${id}
     `;
   }

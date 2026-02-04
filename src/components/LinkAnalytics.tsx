@@ -55,6 +55,24 @@ interface RecentView {
   session_duration_ms: number | null;
 }
 
+interface DownloadStats {
+  total_downloads: number;
+  unique_downloaders: number;
+}
+
+interface RecentDownload {
+  id: number;
+  downloaded_at: string;
+  photo_id: string;
+  filename: string;
+  original_name: string | null;
+  country: string | null;
+  city: string | null;
+  device_type: string | null;
+  browser: string | null;
+  os: string | null;
+}
+
 interface LinkAnalyticsData {
   overview: OverviewStats;
   viewsOverTime: ViewOverTime[];
@@ -62,6 +80,8 @@ interface LinkAnalyticsData {
   browsers: BrowserBreakdown[];
   geo: GeoBreakdown[];
   recent: RecentView[];
+  downloadStats: DownloadStats;
+  recentDownloads: RecentDownload[];
 }
 
 const PIE_COLORS = ["#a78bfa", "#818cf8", "#6366f1", "#4f46e5", "#4338ca"];
@@ -191,6 +211,74 @@ function compareRecent(
   }
 }
 
+type DownloadSortKey = "time" | "photo" | "location" | "device" | "browser";
+
+function compareDownload(
+  a: RecentDownload,
+  b: RecentDownload,
+  key: DownloadSortKey,
+): number {
+  switch (key) {
+    case "time":
+      return (
+        new Date(a.downloaded_at).getTime() -
+        new Date(b.downloaded_at).getTime()
+      );
+    case "photo":
+      return (a.original_name ?? a.filename).localeCompare(
+        b.original_name ?? b.filename,
+      );
+    case "location": {
+      const aLoc = [a.city, a.country].filter(Boolean).join(", ");
+      const bLoc = [b.city, b.country].filter(Boolean).join(", ");
+      return aLoc.localeCompare(bLoc);
+    }
+    case "device":
+      return (a.device_type ?? "").localeCompare(b.device_type ?? "");
+    case "browser":
+      return (a.browser ?? "").localeCompare(b.browser ?? "");
+  }
+}
+
+function RecentDownloadCard({ download }: { download: RecentDownload }) {
+  const location =
+    [download.city, download.country].filter(Boolean).join(", ") || "-";
+  const browser =
+    [download.browser, download.os].filter(Boolean).join(" / ") || "-";
+
+  return (
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-zinc-300">
+          {formatDateTime(download.downloaded_at)}
+        </span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <span className="text-zinc-500">Photo</span>
+          <p className="truncate text-zinc-300">
+            {download.original_name ?? download.filename}
+          </p>
+        </div>
+        <div>
+          <span className="text-zinc-500">Location</span>
+          <p className="text-zinc-300">{location}</p>
+        </div>
+        <div>
+          <span className="text-zinc-500">Device</span>
+          <p className="capitalize text-zinc-300">
+            {download.device_type ?? "-"}
+          </p>
+        </div>
+        <div>
+          <span className="text-zinc-500">Browser</span>
+          <p className="text-zinc-300">{browser}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RecentViewCard({ view }: { view: RecentView }) {
   const location =
     [view.city, view.country].filter(Boolean).join(", ") || "-";
@@ -249,6 +337,12 @@ export default function LinkAnalytics({ linkId }: { linkId: string }) {
     "device",
     "browser",
   ]);
+  const downloadSort = useTableSort<DownloadSortKey>("time", "desc", [
+    "photo",
+    "location",
+    "device",
+    "browser",
+  ]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -295,6 +389,18 @@ export default function LinkAnalytics({ linkId }: { linkId: string }) {
         : [],
     [data, recentSort.sortKey, recentSort.sortDir],
   );
+  const sortedDownloads = useMemo(
+    () =>
+      data
+        ? sortedBy(
+            data.recentDownloads,
+            downloadSort.sortKey,
+            downloadSort.sortDir,
+            compareDownload,
+          )
+        : [],
+    [data, downloadSort.sortKey, downloadSort.sortDir],
+  );
 
   if (loading && !data) {
     return (
@@ -339,7 +445,7 @@ export default function LinkAnalytics({ linkId }: { linkId: string }) {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className={`grid grid-cols-2 gap-4 ${data.downloadStats.total_downloads > 0 ? "sm:grid-cols-3 lg:grid-cols-5" : "sm:grid-cols-3"}`}>
         <div className="rounded-lg bg-zinc-900 p-4">
           <div className="text-xs text-zinc-400">Total Views</div>
           <div className="mt-1 text-2xl font-light text-white">
@@ -358,6 +464,22 @@ export default function LinkAnalytics({ linkId }: { linkId: string }) {
             {formatDuration(data.overview.avg_duration_ms)}
           </div>
         </div>
+        {data.downloadStats.total_downloads > 0 && (
+          <>
+            <div className="rounded-lg bg-zinc-900 p-4">
+              <div className="text-xs text-zinc-400">Total Downloads</div>
+              <div className="mt-1 text-2xl font-light text-white">
+                {data.downloadStats.total_downloads.toLocaleString()}
+              </div>
+            </div>
+            <div className="rounded-lg bg-zinc-900 p-4">
+              <div className="text-xs text-zinc-400">Unique Downloaders</div>
+              <div className="mt-1 text-2xl font-light text-white">
+                {data.downloadStats.unique_downloaders.toLocaleString()}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Views Over Time */}
@@ -667,6 +789,113 @@ export default function LinkAnalytics({ linkId }: { linkId: string }) {
           </p>
         )}
       </div>
+
+      {/* Recent Downloads */}
+      {data.downloadStats.total_downloads > 0 && (
+        <div className="rounded-lg bg-zinc-900 p-4">
+          <h3 className="mb-4 text-sm font-medium text-zinc-300">
+            Recent Downloads
+          </h3>
+          {data.recentDownloads.length > 0 ? (
+            <>
+              {/* Mobile: card layout */}
+              <div className="flex flex-col gap-3 md:hidden">
+                {sortedDownloads.map((dl) => (
+                  <RecentDownloadCard key={dl.id} download={dl} />
+                ))}
+              </div>
+
+              {/* Desktop: table layout */}
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-800 text-left text-zinc-400">
+                      {(
+                        [
+                          {
+                            key: "time" as const,
+                            label: "Time",
+                            align: "text-left",
+                          },
+                          {
+                            key: "photo" as const,
+                            label: "Photo",
+                            align: "text-left",
+                          },
+                          {
+                            key: "location" as const,
+                            label: "Location",
+                            align: "text-left",
+                          },
+                          {
+                            key: "device" as const,
+                            label: "Device",
+                            align: "text-left",
+                          },
+                          {
+                            key: "browser" as const,
+                            label: "Browser",
+                            align: "text-left",
+                          },
+                        ] as const
+                      ).map((col) => (
+                        <th
+                          key={col.key}
+                          className={`pb-2 font-medium ${col.align}`}
+                        >
+                          <button
+                            onClick={() => downloadSort.handleSort(col.key)}
+                            className="inline-flex items-center transition hover:text-white"
+                          >
+                            {col.label}
+                            <SortIcon
+                              direction={
+                                downloadSort.sortKey === col.key
+                                  ? downloadSort.sortDir
+                                  : null
+                              }
+                            />
+                          </button>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedDownloads.map((dl) => (
+                      <tr
+                        key={dl.id}
+                        className="border-b border-zinc-800/50"
+                      >
+                        <td className="py-2 text-zinc-400">
+                          {formatDateTime(dl.downloaded_at)}
+                        </td>
+                        <td className="max-w-[200px] truncate py-2 text-zinc-300">
+                          {dl.original_name ?? dl.filename}
+                        </td>
+                        <td className="py-2 text-zinc-300">
+                          {[dl.city, dl.country].filter(Boolean).join(", ") ||
+                            "-"}
+                        </td>
+                        <td className="py-2 capitalize text-zinc-300">
+                          {dl.device_type ?? "-"}
+                        </td>
+                        <td className="py-2 text-zinc-300">
+                          {[dl.browser, dl.os].filter(Boolean).join(" / ") ||
+                            "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <p className="py-8 text-center text-sm text-zinc-500">
+              No downloads yet
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

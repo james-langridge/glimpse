@@ -49,7 +49,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { photoIds, expiresAt, title } = body;
+    const { photoIds, expiresAt, title, allowDownloads } = body;
 
     if (title !== undefined) {
       const trimmed = typeof title === "string" ? title.trim() : null;
@@ -65,6 +65,10 @@ export async function PUT(
         );
       }
       await updateLink(id, { expires_at: expiresDate });
+    }
+
+    if (allowDownloads !== undefined) {
+      await updateLink(id, { allow_downloads: allowDownloads === true });
     }
 
     if (Array.isArray(photoIds)) {

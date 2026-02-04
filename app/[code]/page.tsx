@@ -155,7 +155,7 @@ export default async function SharePage({ params }: Props) {
         </h1>
       )}
       <ExpiryCountdown expiresAt={new Date(link.expires_at).toISOString()} />
-      <ShareGallery photos={photos} code={upperCode} />
+      <ShareGallery photos={photos} code={upperCode} allowDownloads={link.allow_downloads} />
       <Footer />
       {viewId !== null && <DurationTracker viewId={viewId} />}
     </div>

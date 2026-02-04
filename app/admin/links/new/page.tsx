@@ -37,6 +37,7 @@ function NewLinkContent() {
   const [expiryMs, setExpiryMs] = useState(7 * 24 * 60 * 60 * 1000);
   const [customExpiry, setCustomExpiry] = useState("");
   const [title, setTitle] = useState("");
+  const [allowDownloads, setAllowDownloads] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
@@ -73,6 +74,7 @@ function NewLinkContent() {
           photoIds: selectedPhotos,
           expiresAt,
           title: title.trim() || undefined,
+          allowDownloads,
         }),
       });
 
@@ -150,6 +152,33 @@ function NewLinkContent() {
               className="mt-3 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white"
             />
           )}
+        </div>
+
+        <div className="mb-8">
+          <h2 className="mb-3 text-sm font-medium text-zinc-300">Downloads</h2>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={allowDownloads}
+              onClick={() => setAllowDownloads(!allowDownloads)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
+                allowDownloads ? "bg-emerald-500" : "bg-zinc-700"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition-transform ${
+                  allowDownloads ? "translate-x-5.5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+            <span className="text-sm text-zinc-300">
+              Allow photo downloads
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            When enabled, recipients can download individual photos
+          </p>
         </div>
 
         {error && <p className="mb-4 text-sm text-red-400">{error}</p>}

@@ -18,6 +18,7 @@ interface LinkDetail {
   id: string;
   code: string;
   title: string | null;
+  allow_downloads: boolean;
   status: "active" | "expired" | "revoked";
   expires_at: string;
   revoked: boolean;
@@ -58,6 +59,7 @@ export default function LinkDetailPage() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
+  const [togglingDownloads, setTogglingDownloads] = useState(false);
 
   const fetchLink = useCallback(async () => {
     try {
@@ -192,6 +194,21 @@ export default function LinkDetailPage() {
     }
   }
 
+  async function handleToggleDownloads() {
+    if (!link || togglingDownloads) return;
+    setTogglingDownloads(true);
+    try {
+      const res = await fetch(`/api/links/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allowDownloads: !link.allow_downloads }),
+      });
+      if (res.ok) fetchLink();
+    } finally {
+      setTogglingDownloads(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -291,7 +308,7 @@ export default function LinkDetailPage() {
         </div>
 
         {/* Details */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <div className="rounded-lg bg-zinc-900 p-4">
             <div className="text-xs text-zinc-400">Photos</div>
             <div className="mt-1 text-xl text-white">{link.photos.length}</div>
@@ -351,6 +368,32 @@ export default function LinkDetailPage() {
             <div className="text-xs text-zinc-400">Status</div>
             <div className="mt-1 text-sm capitalize text-white">
               {link.status}
+            </div>
+          </div>
+          <div className="rounded-lg bg-zinc-900 p-4">
+            <div className="text-xs text-zinc-400">Downloads</div>
+            <div className="mt-1 flex items-center gap-2">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={link.allow_downloads}
+                disabled={link.status !== "active" || togglingDownloads}
+                onClick={handleToggleDownloads}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  link.allow_downloads ? "bg-emerald-500" : "bg-zinc-700"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition-transform ${
+                    link.allow_downloads
+                      ? "translate-x-5.5"
+                      : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+              <span className="text-sm text-zinc-400">
+                {link.allow_downloads ? "Enabled" : "Disabled"}
+              </span>
             </div>
           </div>
         </div>

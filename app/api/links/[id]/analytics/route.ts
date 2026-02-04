@@ -8,6 +8,10 @@ import {
   getGeoBreakdown,
   getRecentViews,
 } from "@/src/db/analytics";
+import {
+  getDownloadCountForLink,
+  getDownloadsForLink,
+} from "@/src/db/downloads";
 
 export async function GET(
   request: NextRequest,
@@ -25,15 +29,25 @@ export async function GET(
     const days = parseInt(searchParams.get("days") ?? "30", 10);
     const validDays = [7, 30, 90].includes(days) ? days : 30;
 
-    const [overview, viewsOverTime, devices, browsers, geo, recent] =
-      await Promise.all([
-        getOverviewStats(validDays, id),
-        getViewsOverTime(validDays, id),
-        getDeviceBreakdown(validDays, id),
-        getBrowserBreakdown(validDays, id),
-        getGeoBreakdown(validDays, id),
-        getRecentViews(20, validDays, id),
-      ]);
+    const [
+      overview,
+      viewsOverTime,
+      devices,
+      browsers,
+      geo,
+      recent,
+      downloadStats,
+      recentDownloads,
+    ] = await Promise.all([
+      getOverviewStats(validDays, id),
+      getViewsOverTime(validDays, id),
+      getDeviceBreakdown(validDays, id),
+      getBrowserBreakdown(validDays, id),
+      getGeoBreakdown(validDays, id),
+      getRecentViews(20, validDays, id),
+      getDownloadCountForLink(id, validDays),
+      getDownloadsForLink(id, 20, validDays),
+    ]);
 
     return NextResponse.json({
       overview,
@@ -42,6 +56,8 @@ export async function GET(
       browsers,
       geo,
       recent,
+      downloadStats,
+      recentDownloads,
     });
   } catch (e) {
     console.error("Failed to fetch link analytics:", e);

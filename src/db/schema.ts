@@ -77,4 +77,24 @@ export async function initializeDatabase() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+
+  await query(`
+    ALTER TABLE share_links ADD COLUMN IF NOT EXISTS allow_downloads BOOLEAN DEFAULT FALSE
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS photo_downloads (
+      id SERIAL PRIMARY KEY,
+      share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE CASCADE,
+      photo_id VARCHAR(8) REFERENCES photos(id) ON DELETE CASCADE,
+      downloaded_at TIMESTAMPTZ DEFAULT NOW(),
+      ip_hash VARCHAR(64),
+      country VARCHAR(100),
+      city VARCHAR(255),
+      user_agent TEXT,
+      device_type VARCHAR(20),
+      browser VARCHAR(100),
+      os VARCHAR(100)
+    )
+  `);
 }
