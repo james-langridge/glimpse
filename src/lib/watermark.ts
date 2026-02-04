@@ -337,7 +337,8 @@ export async function embedWatermark(
     throw new Error(`Image too small for watermark: ${width}x${height}`);
   }
 
-  // DCT first, then QIM pixel — order matters (see plan)
+  // DCT first, then QIM pixel — DCT block-level changes would shift
+  // pixel values enough to destroy QIM's ±2-level decision boundaries.
   embedDCTWatermark(data, width, height, channels, downloadId, dctSeed);
   embedPixelWatermark(data, width, height, channels, downloadId, seed);
 
