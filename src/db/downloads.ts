@@ -10,11 +10,46 @@ export async function insertDownload(download: {
   device_type: string | null;
   browser: string | null;
   os: string | null;
-}) {
-  await sql`
+}): Promise<number> {
+  const result = await sql<{ id: number }>`
     INSERT INTO photo_downloads (share_link_id, photo_id, ip_hash, country, city, user_agent, device_type, browser, os)
     VALUES (${download.share_link_id}, ${download.photo_id}, ${download.ip_hash}, ${download.country}, ${download.city}, ${download.user_agent}, ${download.device_type}, ${download.browser}, ${download.os})
+    RETURNING id
   `;
+  return result.rows[0].id;
+}
+
+export interface DownloadDetail {
+  id: number;
+  downloaded_at: string;
+  photo_id: string;
+  filename: string;
+  original_name: string | null;
+  share_link_id: string;
+  code: string;
+  title: string | null;
+  ip_hash: string | null;
+  country: string | null;
+  city: string | null;
+  device_type: string | null;
+  browser: string | null;
+  os: string | null;
+}
+
+export async function getDownloadById(
+  id: number,
+): Promise<DownloadDetail | null> {
+  const result = await query<DownloadDetail>(
+    `SELECT pd.id, pd.downloaded_at, pd.photo_id, p.filename, p.original_name,
+            pd.share_link_id, sl.code, sl.title,
+            pd.ip_hash, pd.country, pd.city, pd.device_type, pd.browser, pd.os
+     FROM photo_downloads pd
+     JOIN photos p ON p.id = pd.photo_id
+     JOIN share_links sl ON sl.id = pd.share_link_id
+     WHERE pd.id = $1`,
+    [id],
+  );
+  return result.rows[0] ?? null;
 }
 
 export async function getDownloadCountForLink(

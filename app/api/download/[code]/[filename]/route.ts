@@ -4,6 +4,7 @@ import { insertDownload } from "@/src/db/downloads";
 import { readPhoto } from "@/src/lib/storage";
 import { checkRateLimit, getClientIP } from "@/src/lib/rate-limit";
 import { hashIP, isBot, parseGeo, parseUserAgent } from "@/src/lib/analytics";
+import { embedWatermark } from "@/src/lib/watermark";
 
 const MIME_TYPES: Record<string, string> = {
   jpg: "image/jpeg",
@@ -47,29 +48,51 @@ export async function GET(
       return new NextResponse("Not found", { status: 404 });
     }
 
-    // Record download analytics (fire-and-forget)
-    const ip = getClientIP(request);
-    const userAgent = request.headers.get("user-agent") || "";
-    if (!isBot(userAgent)) {
-      const ipHash = ip !== "unknown" ? hashIP(ip) : null;
-      const geo = ip !== "unknown" ? parseGeo(ip) : { country: null, city: null };
-      const ua = parseUserAgent(userAgent);
-      insertDownload({
-        share_link_id: link.id,
-        photo_id: photo.id,
-        ip_hash: ipHash,
-        country: geo.country,
-        city: geo.city,
-        user_agent: userAgent || null,
-        device_type: ua.device_type,
-        browser: ua.browser,
-        os: ua.os,
-      }).catch((err) => console.error("Failed to record download:", err));
-    }
-
     const data = await readPhoto(photo.filename);
     const downloadName = photo.original_name ?? photo.filename;
     const safeName = downloadName.replace(/["\r\n]/g, "_");
+
+    // Record analytics and watermark for non-bot requests
+    const ip = getClientIP(request);
+    const userAgent = request.headers.get("user-agent") || "";
+    if (!isBot(userAgent)) {
+      let downloadId: number | null = null;
+      try {
+        const ipHash = ip !== "unknown" ? hashIP(ip) : null;
+        const geo =
+          ip !== "unknown" ? parseGeo(ip) : { country: null, city: null };
+        const ua = parseUserAgent(userAgent);
+        downloadId = await insertDownload({
+          share_link_id: link.id,
+          photo_id: photo.id,
+          ip_hash: ipHash,
+          country: geo.country,
+          city: geo.city,
+          user_agent: userAgent || null,
+          device_type: ua.device_type,
+          browser: ua.browser,
+          os: ua.os,
+        });
+      } catch (err) {
+        console.error("Failed to record download:", err);
+      }
+
+      if (downloadId !== null) {
+        try {
+          const watermarked = await embedWatermark(data, downloadId);
+          return new NextResponse(new Uint8Array(watermarked), {
+            headers: {
+              "Content-Type": "image/jpeg",
+              "Content-Length": String(watermarked.length),
+              "Content-Disposition": `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(downloadName)}`,
+              "Cache-Control": "no-store",
+            },
+          });
+        } catch (err) {
+          console.error("Watermark failed, serving raw file:", err);
+        }
+      }
+    }
 
     return new NextResponse(new Uint8Array(data), {
       headers: {
