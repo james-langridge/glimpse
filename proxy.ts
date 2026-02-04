@@ -3,6 +3,9 @@ import { getIronSession } from "iron-session";
 import { SessionData, sessionOptions } from "@/src/lib/auth";
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isPublicRedirect = pathname === "/" || pathname === "/login";
+
   const response = NextResponse.next();
   const session = await getIronSession<SessionData>(
     request,
@@ -10,8 +13,15 @@ export async function proxy(request: NextRequest) {
     sessionOptions,
   );
 
+  if (isPublicRedirect) {
+    if (session.isLoggedIn) {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+    return response;
+  }
+
   if (!session.isLoggedIn) {
-    if (request.nextUrl.pathname.startsWith("/api/")) {
+    if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.redirect(new URL("/login", request.url));
@@ -22,6 +32,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
+    "/login",
     "/admin/:path*",
     "/api/photos",
     "/api/photos/:path*",
