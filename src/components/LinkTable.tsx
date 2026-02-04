@@ -227,6 +227,99 @@ function PhotoPreviews({
   );
 }
 
+function LinkCard({
+  link,
+  selectionMode,
+  isSelected,
+  onToggleSelect,
+}: {
+  link: LinkItem;
+  selectionMode?: boolean;
+  isSelected: boolean;
+  onToggleSelect?: (id: string) => void;
+}) {
+  const router = useRouter();
+
+  return (
+    <div
+      className={`cursor-pointer rounded-lg border bg-zinc-900/50 p-4 transition ${
+        isSelected
+          ? "border-blue-500 bg-blue-500/5"
+          : "border-zinc-800 hover:border-zinc-700"
+      }`}
+      onClick={() =>
+        selectionMode
+          ? onToggleSelect?.(link.id)
+          : router.push(`/admin/links/${link.id}`)
+      }
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {selectionMode && (
+            <div
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                isSelected
+                  ? "border-blue-500 bg-blue-500"
+                  : "border-zinc-600 bg-zinc-800"
+              }`}
+            >
+              {isSelected && <Checkmark />}
+            </div>
+          )}
+          <CopyButton code={link.code}>
+            <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white hover:bg-zinc-700">
+              {link.code}
+            </code>
+          </CopyButton>
+          {link.title && (
+            <span className="truncate text-sm text-zinc-400">
+              {link.title}
+            </span>
+          )}
+        </div>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
+        >
+          {link.status}
+        </span>
+      </div>
+      {link.preview_photo_ids.length > 0 && (
+        <div className="mt-3">
+          <PhotoPreviews
+            photoIds={link.preview_photo_ids}
+            totalCount={link.photo_count}
+          />
+        </div>
+      )}
+      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <span className="text-zinc-500">Photos</span>
+          <p className="text-zinc-300">{link.photo_count}</p>
+        </div>
+        <div>
+          <span className="text-zinc-500">Expires</span>
+          <p className="text-zinc-300">
+            {link.status === "active"
+              ? timeUntil(link.expires_at)
+              : formatDate(link.expires_at)}
+          </p>
+        </div>
+        <div className="col-span-2">
+          <span className="text-zinc-500">Created</span>
+          <p className="text-zinc-400">{formatDate(link.created_at)}</p>
+        </div>
+      </div>
+      {!selectionMode && (
+        <div className="mt-3 flex items-center gap-4 border-t border-zinc-800 pt-3">
+          <CopyButton code={link.code} />
+          <OpenButton code={link.code} />
+          <ShareButton code={link.code} title={link.title} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LinkTable({
   links,
   selectionMode,
@@ -267,95 +360,18 @@ export default function LinkTable({
     { key: "created", label: "Created" },
   ];
 
-  function LinkCard({ link }: { link: LinkItem }) {
-    const isSelected = selectionMode && selectedIds?.has(link.id);
-
-    return (
-      <div
-        className={`cursor-pointer rounded-lg border bg-zinc-900/50 p-4 transition ${
-          isSelected
-            ? "border-blue-500 bg-blue-500/5"
-            : "border-zinc-800 hover:border-zinc-700"
-        }`}
-        onClick={() =>
-          selectionMode
-            ? onToggleSelect?.(link.id)
-            : router.push(`/admin/links/${link.id}`)
-        }
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {selectionMode && (
-              <div
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
-                  isSelected
-                    ? "border-blue-500 bg-blue-500"
-                    : "border-zinc-600 bg-zinc-800"
-                }`}
-              >
-                {isSelected && <Checkmark />}
-              </div>
-            )}
-            <CopyButton code={link.code}>
-              <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white hover:bg-zinc-700">
-                {link.code}
-              </code>
-            </CopyButton>
-            {link.title && (
-              <span className="truncate text-sm text-zinc-400">
-                {link.title}
-              </span>
-            )}
-          </div>
-          <span
-            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
-          >
-            {link.status}
-          </span>
-        </div>
-        {link.preview_photo_ids.length > 0 && (
-          <div className="mt-3">
-            <PhotoPreviews
-              photoIds={link.preview_photo_ids}
-              totalCount={link.photo_count}
-            />
-          </div>
-        )}
-        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <span className="text-zinc-500">Photos</span>
-            <p className="text-zinc-300">{link.photo_count}</p>
-          </div>
-          <div>
-            <span className="text-zinc-500">Expires</span>
-            <p className="text-zinc-300">
-              {link.status === "active"
-                ? timeUntil(link.expires_at)
-                : formatDate(link.expires_at)}
-            </p>
-          </div>
-          <div className="col-span-2">
-            <span className="text-zinc-500">Created</span>
-            <p className="text-zinc-400">{formatDate(link.created_at)}</p>
-          </div>
-        </div>
-        {!selectionMode && (
-          <div className="mt-3 flex items-center gap-4 border-t border-zinc-800 pt-3">
-            <CopyButton code={link.code} />
-            <OpenButton code={link.code} />
-            <ShareButton code={link.code} title={link.title} />
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <>
       {/* Mobile: card layout */}
       <div className="flex flex-col gap-3 md:hidden">
         {sorted.map((link) => (
-          <LinkCard key={link.id} link={link} />
+          <LinkCard
+            key={link.id}
+            link={link}
+            selectionMode={selectionMode}
+            isSelected={!!selectionMode && !!selectedIds?.has(link.id)}
+            onToggleSelect={onToggleSelect}
+          />
         ))}
       </div>
 

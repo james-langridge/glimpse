@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import LinkTable from "@/src/components/LinkTable";
 import Spinner from "@/src/components/Spinner";
@@ -60,14 +60,15 @@ export default function LinksPage() {
     revoked: links.filter((l) => l.status === "revoked").length,
   };
 
-  const allSelectedAreActive =
-    selectedIds.size > 0 &&
-    Array.from(selectedIds).every((id) => {
-      const link = links.find((l) => l.id === id);
-      return link?.status === "active";
-    });
+  const allSelectedAreActive = useMemo(() => {
+    if (selectedIds.size === 0) return false;
+    const linkMap = new Map(links.map((l) => [l.id, l]));
+    return Array.from(selectedIds).every(
+      (id) => linkMap.get(id)?.status === "active",
+    );
+  }, [selectedIds, links]);
 
-  function handleToggleSelect(id: string) {
+  const handleToggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -77,7 +78,7 @@ export default function LinksPage() {
       }
       return next;
     });
-  }
+  }, []);
 
   function handleCancelSelection() {
     setSelectionMode(false);
@@ -108,8 +109,12 @@ export default function LinksPage() {
         const deletedSet = new Set(data.deleted);
         setLinks((prev) => prev.filter((l) => !deletedSet.has(l.id)));
         handleCancelSelection();
+        if (data.failed?.length > 0) {
+          alert(`${data.failed.length} link(s) could not be deleted.`);
+        }
       } else {
-        alert("Failed to delete links. Please try again.");
+        const data = await res.json().catch(() => null);
+        alert(data?.error ?? "Failed to delete links. Please try again.");
       }
     } finally {
       setBulkDeleting(false);
@@ -144,8 +149,12 @@ export default function LinksPage() {
           ),
         );
         handleCancelSelection();
+        if (data.failed?.length > 0) {
+          alert(`${data.failed.length} link(s) could not be revoked.`);
+        }
       } else {
-        alert("Failed to revoke links. Please try again.");
+        const data = await res.json().catch(() => null);
+        alert(data?.error ?? "Failed to revoke links. Please try again.");
       }
     } finally {
       setBulkRevoking(false);
