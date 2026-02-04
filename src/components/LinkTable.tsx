@@ -16,6 +16,9 @@ interface LinkItem {
 
 interface LinkTableProps {
   links: LinkItem[];
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 function CopyButton({
@@ -125,6 +128,20 @@ const statusColors: Record<string, string> = {
   revoked: "bg-red-500/20 text-red-400",
 };
 
+function Checkmark({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className ?? "h-3 w-3 text-white"}
+      viewBox="0 0 12 12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M2 6l3 3 5-5" />
+    </svg>
+  );
+}
+
 type SortKey = "code" | "status" | "photos" | "expires" | "created";
 type SortDir = "asc" | "desc";
 
@@ -210,67 +227,12 @@ function PhotoPreviews({
   );
 }
 
-function LinkCard({ link }: { link: LinkItem }) {
-  const router = useRouter();
-
-  return (
-    <div
-      className="cursor-pointer rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 transition hover:border-zinc-700"
-      onClick={() => router.push(`/admin/links/${link.id}`)}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CopyButton code={link.code}>
-            <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white hover:bg-zinc-700">
-              {link.code}
-            </code>
-          </CopyButton>
-          {link.title && (
-            <span className="truncate text-sm text-zinc-400">{link.title}</span>
-          )}
-        </div>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
-        >
-          {link.status}
-        </span>
-      </div>
-      {link.preview_photo_ids.length > 0 && (
-        <div className="mt-3">
-          <PhotoPreviews
-            photoIds={link.preview_photo_ids}
-            totalCount={link.photo_count}
-          />
-        </div>
-      )}
-      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-        <div>
-          <span className="text-zinc-500">Photos</span>
-          <p className="text-zinc-300">{link.photo_count}</p>
-        </div>
-        <div>
-          <span className="text-zinc-500">Expires</span>
-          <p className="text-zinc-300">
-            {link.status === "active"
-              ? timeUntil(link.expires_at)
-              : formatDate(link.expires_at)}
-          </p>
-        </div>
-        <div className="col-span-2">
-          <span className="text-zinc-500">Created</span>
-          <p className="text-zinc-400">{formatDate(link.created_at)}</p>
-        </div>
-      </div>
-      <div className="mt-3 flex items-center gap-4 border-t border-zinc-800 pt-3">
-        <CopyButton code={link.code} />
-        <OpenButton code={link.code} />
-        <ShareButton code={link.code} title={link.title} />
-      </div>
-    </div>
-  );
-}
-
-export default function LinkTable({ links }: LinkTableProps) {
+export default function LinkTable({
+  links,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
+}: LinkTableProps) {
   const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey>("created");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -305,6 +267,89 @@ export default function LinkTable({ links }: LinkTableProps) {
     { key: "created", label: "Created" },
   ];
 
+  function LinkCard({ link }: { link: LinkItem }) {
+    const isSelected = selectionMode && selectedIds?.has(link.id);
+
+    return (
+      <div
+        className={`cursor-pointer rounded-lg border bg-zinc-900/50 p-4 transition ${
+          isSelected
+            ? "border-blue-500 bg-blue-500/5"
+            : "border-zinc-800 hover:border-zinc-700"
+        }`}
+        onClick={() =>
+          selectionMode
+            ? onToggleSelect?.(link.id)
+            : router.push(`/admin/links/${link.id}`)
+        }
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {selectionMode && (
+              <div
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-500"
+                    : "border-zinc-600 bg-zinc-800"
+                }`}
+              >
+                {isSelected && <Checkmark />}
+              </div>
+            )}
+            <CopyButton code={link.code}>
+              <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white hover:bg-zinc-700">
+                {link.code}
+              </code>
+            </CopyButton>
+            {link.title && (
+              <span className="truncate text-sm text-zinc-400">
+                {link.title}
+              </span>
+            )}
+          </div>
+          <span
+            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
+          >
+            {link.status}
+          </span>
+        </div>
+        {link.preview_photo_ids.length > 0 && (
+          <div className="mt-3">
+            <PhotoPreviews
+              photoIds={link.preview_photo_ids}
+              totalCount={link.photo_count}
+            />
+          </div>
+        )}
+        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <span className="text-zinc-500">Photos</span>
+            <p className="text-zinc-300">{link.photo_count}</p>
+          </div>
+          <div>
+            <span className="text-zinc-500">Expires</span>
+            <p className="text-zinc-300">
+              {link.status === "active"
+                ? timeUntil(link.expires_at)
+                : formatDate(link.expires_at)}
+            </p>
+          </div>
+          <div className="col-span-2">
+            <span className="text-zinc-500">Created</span>
+            <p className="text-zinc-400">{formatDate(link.created_at)}</p>
+          </div>
+        </div>
+        {!selectionMode && (
+          <div className="mt-3 flex items-center gap-4 border-t border-zinc-800 pt-3">
+            <CopyButton code={link.code} />
+            <OpenButton code={link.code} />
+            <ShareButton code={link.code} title={link.title} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Mobile: card layout */}
@@ -319,6 +364,9 @@ export default function LinkTable({ links }: LinkTableProps) {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-zinc-800 text-zinc-400">
+              {selectionMode && (
+                <th className="w-8 pb-3 pr-4 font-medium"></th>
+              )}
               {columns.map((col) => (
                 <th key={col.key} className="pb-3 pr-4 font-medium">
                   <button
@@ -330,63 +378,87 @@ export default function LinkTable({ links }: LinkTableProps) {
                   </button>
                 </th>
               ))}
-              <th className="pb-3 font-medium"></th>
+              {!selectionMode && <th className="pb-3 font-medium"></th>}
             </tr>
           </thead>
           <tbody>
-            {sorted.map((link) => (
-              <tr
-                key={link.id}
-                className="cursor-pointer border-b border-zinc-800/50 transition hover:bg-zinc-800/50"
-                onClick={() => router.push(`/admin/links/${link.id}`)}
-              >
-                <td className="py-3 pr-4">
-                  <div className="flex items-center gap-2">
-                    <CopyButton code={link.code}>
-                      <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white hover:bg-zinc-700">
-                        {link.code}
-                      </code>
-                    </CopyButton>
-                    {link.title && (
-                      <span className="truncate text-sm text-zinc-400">
-                        {link.title}
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="py-3 pr-4">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
-                  >
-                    {link.status}
-                  </span>
-                </td>
-                <td className="py-3 pr-4 text-zinc-300">
-                  <div className="flex items-center gap-2">
-                    <PhotoPreviews
-                      photoIds={link.preview_photo_ids}
-                      totalCount={link.photo_count}
-                    />
-                    {link.preview_photo_ids.length === 0 && link.photo_count}
-                  </div>
-                </td>
-                <td className="py-3 pr-4 text-zinc-300">
-                  {link.status === "active"
-                    ? timeUntil(link.expires_at)
-                    : formatDate(link.expires_at)}
-                </td>
-                <td className="py-3 pr-4 text-zinc-400">
-                  {formatDate(link.created_at)}
-                </td>
-                <td className="py-3">
-                  <div className="flex items-center justify-end gap-3">
-                    <CopyButton code={link.code} />
-                    <OpenButton code={link.code} />
-                    <ShareButton code={link.code} title={link.title} />
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {sorted.map((link) => {
+              const isSelected = selectionMode && selectedIds?.has(link.id);
+              return (
+                <tr
+                  key={link.id}
+                  className={`cursor-pointer border-b border-zinc-800/50 transition ${
+                    isSelected ? "bg-blue-500/10" : "hover:bg-zinc-800/50"
+                  }`}
+                  onClick={() =>
+                    selectionMode
+                      ? onToggleSelect?.(link.id)
+                      : router.push(`/admin/links/${link.id}`)
+                  }
+                >
+                  {selectionMode && (
+                    <td className="py-3 pr-4">
+                      <div
+                        className={`flex h-5 w-5 items-center justify-center rounded border ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-500"
+                            : "border-zinc-600 bg-zinc-800"
+                        }`}
+                      >
+                        {isSelected && <Checkmark />}
+                      </div>
+                    </td>
+                  )}
+                  <td className="py-3 pr-4">
+                    <div className="flex items-center gap-2">
+                      <CopyButton code={link.code}>
+                        <code className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-white hover:bg-zinc-700">
+                          {link.code}
+                        </code>
+                      </CopyButton>
+                      {link.title && (
+                        <span className="truncate text-sm text-zinc-400">
+                          {link.title}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
+                    >
+                      {link.status}
+                    </span>
+                  </td>
+                  <td className="py-3 pr-4 text-zinc-300">
+                    <div className="flex items-center gap-2">
+                      <PhotoPreviews
+                        photoIds={link.preview_photo_ids}
+                        totalCount={link.photo_count}
+                      />
+                      {link.preview_photo_ids.length === 0 && link.photo_count}
+                    </div>
+                  </td>
+                  <td className="py-3 pr-4 text-zinc-300">
+                    {link.status === "active"
+                      ? timeUntil(link.expires_at)
+                      : formatDate(link.expires_at)}
+                  </td>
+                  <td className="py-3 pr-4 text-zinc-400">
+                    {formatDate(link.created_at)}
+                  </td>
+                  {!selectionMode && (
+                    <td className="py-3">
+                      <div className="flex items-center justify-end gap-3">
+                        <CopyButton code={link.code} />
+                        <OpenButton code={link.code} />
+                        <ShareButton code={link.code} title={link.title} />
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

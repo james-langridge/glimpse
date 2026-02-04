@@ -29,6 +29,10 @@ export default function LinksPage() {
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Status | "all">("all");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkRevoking, setBulkRevoking] = useState(false);
 
   const fetchLinks = useCallback(async () => {
     try {
@@ -46,7 +50,8 @@ export default function LinksPage() {
     fetchLinks();
   }, [fetchLinks]);
 
-  const filtered = tab === "all" ? links : links.filter((l) => l.status === tab);
+  const filtered =
+    tab === "all" ? links : links.filter((l) => l.status === tab);
 
   const counts = {
     all: links.length,
@@ -54,6 +59,98 @@ export default function LinksPage() {
     expired: links.filter((l) => l.status === "expired").length,
     revoked: links.filter((l) => l.status === "revoked").length,
   };
+
+  const allSelectedAreActive =
+    selectedIds.size > 0 &&
+    Array.from(selectedIds).every((id) => {
+      const link = links.find((l) => l.id === id);
+      return link?.status === "active";
+    });
+
+  function handleToggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function handleCancelSelection() {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+
+    const ids = Array.from(selectedIds);
+    if (
+      !confirm(
+        `Delete ${ids.length} link${ids.length !== 1 ? "s" : ""}? This cannot be undone.`,
+      )
+    )
+      return;
+
+    setBulkDeleting(true);
+    try {
+      const res = await fetch("/api/links/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const deletedSet = new Set(data.deleted);
+        setLinks((prev) => prev.filter((l) => !deletedSet.has(l.id)));
+        handleCancelSelection();
+      } else {
+        alert("Failed to delete links. Please try again.");
+      }
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
+  async function handleBulkRevoke() {
+    if (selectedIds.size === 0) return;
+
+    const ids = Array.from(selectedIds);
+    if (
+      !confirm(
+        `Revoke ${ids.length} link${ids.length !== 1 ? "s" : ""}? They will no longer be accessible.`,
+      )
+    )
+      return;
+
+    setBulkRevoking(true);
+    try {
+      const res = await fetch("/api/links/bulk-revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const revokedSet = new Set(data.revoked);
+        setLinks((prev) =>
+          prev.map((l) =>
+            revokedSet.has(l.id) ? { ...l, status: "revoked" as Status } : l,
+          ),
+        );
+        handleCancelSelection();
+      } else {
+        alert("Failed to revoke links. Please try again.");
+      }
+    } finally {
+      setBulkRevoking(false);
+    }
+  }
 
   return (
     <div className="px-6 py-8">
@@ -80,7 +177,10 @@ export default function LinksPage() {
           {tabs.map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key);
+                setSelectedIds(new Set());
+              }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 tab === t.key
                   ? "bg-zinc-800 text-white"
@@ -95,12 +195,77 @@ export default function LinksPage() {
           ))}
         </div>
 
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          {!selectionMode ? (
+            <button
+              onClick={() => setSelectionMode(true)}
+              disabled={filtered.length === 0}
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white disabled:opacity-50"
+            >
+              Select
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleCancelSelection}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() =>
+                  setSelectedIds(new Set(filtered.map((l) => l.id)))
+                }
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
+              >
+                All
+              </button>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
+              >
+                None
+              </button>
+              <span className="text-sm text-zinc-500">
+                {selectedIds.size} selected
+              </span>
+              <button
+                onClick={handleBulkRevoke}
+                disabled={
+                  selectedIds.size === 0 ||
+                  !allSelectedAreActive ||
+                  bulkRevoking
+                }
+                className="rounded-md bg-amber-600/80 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-amber-600 disabled:opacity-50"
+              >
+                {bulkRevoking
+                  ? "Revoking..."
+                  : `Revoke (${selectedIds.size})`}
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={selectedIds.size === 0 || bulkDeleting}
+                className="rounded-md bg-red-600/80 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-red-600 disabled:opacity-50"
+              >
+                {bulkDeleting
+                  ? "Deleting..."
+                  : `Delete (${selectedIds.size})`}
+              </button>
+            </>
+          )}
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Spinner />
           </div>
         ) : (
-          <LinkTable links={filtered} />
+          <LinkTable
+            links={filtered}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+          />
         )}
       </div>
     </div>
