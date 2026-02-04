@@ -57,8 +57,14 @@ export async function GET() {
         })
       : null;
 
-    const lastCleanupDeleted = dbSettings["LAST_CLEANUP_DELETED"] ?? null;
-    const lastCleanupErrors = dbSettings["LAST_CLEANUP_ERRORS"] ?? null;
+    const lastCleanupDeleted =
+      dbSettings["LAST_CLEANUP_DELETED"] != null
+        ? parseInt(dbSettings["LAST_CLEANUP_DELETED"], 10)
+        : null;
+    const lastCleanupErrors =
+      dbSettings["LAST_CLEANUP_ERRORS"] != null
+        ? parseInt(dbSettings["LAST_CLEANUP_ERRORS"], 10)
+        : null;
 
     return NextResponse.json({
       settings,

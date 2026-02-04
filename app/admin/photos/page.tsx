@@ -103,16 +103,8 @@ function PhotosContent() {
         }
         if (data.lastCleanupAt) {
           setLastCleanupAt(data.lastCleanupAt);
-          setLastCleanupDeleted(
-            data.lastCleanupDeleted != null
-              ? parseInt(data.lastCleanupDeleted, 10)
-              : null,
-          );
-          setLastCleanupErrors(
-            data.lastCleanupErrors != null
-              ? parseInt(data.lastCleanupErrors, 10)
-              : null,
-          );
+          setLastCleanupDeleted(data.lastCleanupDeleted ?? null);
+          setLastCleanupErrors(data.lastCleanupErrors ?? null);
         }
       })
       .catch(() => {});

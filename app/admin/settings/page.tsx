@@ -51,16 +51,8 @@ export default function SettingsPage() {
         const data = await res.json();
         setSettings(data.settings);
         setLastCleanupAt(data.lastCleanupAt ?? null);
-        setLastCleanupDeleted(
-          data.lastCleanupDeleted != null
-            ? parseInt(data.lastCleanupDeleted, 10)
-            : null,
-        );
-        setLastCleanupErrors(
-          data.lastCleanupErrors != null
-            ? parseInt(data.lastCleanupErrors, 10)
-            : null,
-        );
+        setLastCleanupDeleted(data.lastCleanupDeleted ?? null);
+        setLastCleanupErrors(data.lastCleanupErrors ?? null);
         const newInputs: Record<string, string> = {};
         for (const s of data.settings) {
           newInputs[s.key] = s.dbValue ?? "";
