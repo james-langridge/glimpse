@@ -6,6 +6,10 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublicRedirect = pathname === "/" || pathname === "/login";
 
+  if (isPublicRedirect && !request.cookies.has(sessionOptions.cookieName)) {
+    return NextResponse.next();
+  }
+
   const response = NextResponse.next();
   const session = await getIronSession<SessionData>(
     request,
