@@ -7,6 +7,8 @@ const REDUNDANCY = 3;
 const PIXELS_NEEDED = PAYLOAD_BITS * REDUNDANCY; // 120
 const DELTA = 8;
 
+const SUPPORTED_FORMATS = new Set(["jpeg", "png", "webp"]);
+
 // --- Pure calculations ---
 
 function buildPayload(downloadId: number): number[] {
@@ -36,6 +38,7 @@ function decodeQIM(value: number): number {
   return remainder >= 2 && remainder <= 5 ? 1 : 0;
 }
 
+// count must be << max for efficient sampling; callers verify min image size
 function prngSequence(seed: string, count: number, max: number): number[] {
   if (max < count) throw new Error(`Image too small: need ${count} pixels, have ${max}`);
   const indices: number[] = [];
@@ -111,8 +114,19 @@ function getSeed(): string {
 export async function embedWatermark(
   imageBuffer: Buffer,
   downloadId: number,
-): Promise<Buffer> {
+): Promise<{ buffer: Buffer; contentType: string }> {
+  if (downloadId < 0 || downloadId > 0xffffffff) {
+    throw new Error(`Download ID ${downloadId} exceeds 32-bit unsigned range`);
+  }
+
   const seed = getSeed();
+  const inputMeta = await sharp(imageBuffer).metadata();
+  const format = inputMeta.format ?? "jpeg";
+
+  if (!SUPPORTED_FORMATS.has(format)) {
+    throw new Error(`Unsupported format for watermarking: ${format}`);
+  }
+
   const { data, info } = await sharp(imageBuffer)
     .ensureAlpha()
     .raw()
@@ -126,13 +140,28 @@ export async function embedWatermark(
   embedPixelWatermark(data, width, height, channels, downloadId, seed);
 
   const tag = `glimpse:dl:${downloadId}`;
+  const pipeline = sharp(data, {
+    raw: { width, height, channels },
+  }).withExifMerge({ IFD0: { ImageDescription: tag } });
 
-  const result = await sharp(data, { raw: { width, height, channels } })
-    .withExifMerge({ IFD0: { ImageDescription: tag } })
-    .jpeg({ quality: 98 })
-    .toBuffer();
+  let result: Buffer;
+  let contentType: string;
+  switch (format) {
+    case "png":
+      result = await pipeline.png().toBuffer();
+      contentType = "image/png";
+      break;
+    case "webp":
+      result = await pipeline.webp({ quality: 98 }).toBuffer();
+      contentType = "image/webp";
+      break;
+    default:
+      result = await pipeline.jpeg({ quality: 98 }).toBuffer();
+      contentType = "image/jpeg";
+      break;
+  }
 
-  // Verify watermark survived JPEG encode
+  // Verify watermark survived encoding
   const verifyRaw = await sharp(result)
     .ensureAlpha()
     .raw()
@@ -150,7 +179,7 @@ export async function embedWatermark(
     );
   }
 
-  return result;
+  return { buffer: result, contentType };
 }
 
 export async function extractWatermark(
@@ -160,7 +189,7 @@ export async function extractWatermark(
   const metadata = await sharp(imageBuffer).metadata();
   if (metadata.exif) {
     const exifStr = metadata.exif.toString("binary");
-    const match = exifStr.match(/glimpse:dl:(\d+)/);
+    const match = exifStr.match(/glimpse:dl:(\d{1,10})/);
     if (match) {
       return { downloadId: parseInt(match[1], 10), source: "exif" };
     }

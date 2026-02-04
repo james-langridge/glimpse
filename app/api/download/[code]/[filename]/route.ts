@@ -79,10 +79,13 @@ export async function GET(
 
       if (downloadId !== null) {
         try {
-          const watermarked = await embedWatermark(data, downloadId);
+          const { buffer: watermarked, contentType } = await embedWatermark(
+            data,
+            downloadId,
+          );
           return new NextResponse(new Uint8Array(watermarked), {
             headers: {
-              "Content-Type": "image/jpeg",
+              "Content-Type": contentType,
               "Content-Length": String(watermarked.length),
               "Content-Disposition": `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(downloadName)}`,
               "Cache-Control": "no-store",

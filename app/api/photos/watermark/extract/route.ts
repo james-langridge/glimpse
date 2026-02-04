@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractWatermark } from "@/src/lib/watermark";
 import { getDownloadById } from "@/src/db/downloads";
+import { checkRateLimit } from "@/src/lib/rate-limit";
+
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50 MB
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimited = checkRateLimit(request, "watermark-extract", 10, 60_000);
+    if (rateLimited) return rateLimited;
+
     const formData = await request.formData();
     const file = formData.get("image") as File | null;
 
@@ -15,6 +21,13 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    if (buffer.length > MAX_UPLOAD_SIZE) {
+      return NextResponse.json(
+        { error: "File too large" },
+        { status: 413 },
+      );
+    }
+
     const result = await extractWatermark(buffer);
 
     if (!result) {
