@@ -14,7 +14,13 @@ const EXPIRY_OPTIONS = [
 
 export default function NewLinkPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center px-6 py-16">
+          <div className="h-6 w-6 rounded-full border-2 border-zinc-700 border-t-zinc-400 animate-spin-slow" />
+        </div>
+      }
+    >
       <NewLinkContent />
     </Suspense>
   );
