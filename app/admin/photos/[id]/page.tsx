@@ -188,6 +188,16 @@ export default function PhotoDetailPage() {
         {/* Actions */}
         <div className="mb-8 flex gap-3">
           <button
+            onClick={() =>
+              router.push(
+                `/admin/links/new?photos=${encodeURIComponent(photo.id)}`,
+              )
+            }
+            className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-200"
+          >
+            Create Link
+          </button>
+          <button
             onClick={handleDelete}
             disabled={deleting}
             className="rounded-lg bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-600/30 disabled:opacity-50"
