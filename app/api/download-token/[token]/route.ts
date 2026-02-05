@@ -6,6 +6,11 @@ import { readPhoto } from "@/src/lib/storage";
 import { embedWatermark } from "@/src/lib/watermark";
 import { hashIP, parseGeo, parseUserAgent } from "@/src/lib/analytics";
 
+// iOS Safari (and some other browsers) send preflight/preview requests before
+// the actual download. If we mark the token as consumed on the first request,
+// the real download fails. Allow repeated use within 60 seconds of first use.
+const REUSE_WINDOW_MS = 60_000;
+
 const MIME_TYPES: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
@@ -34,7 +39,8 @@ export async function GET(
       return new NextResponse("Download link not found.", { status: 404 });
     }
 
-    if (dt.consumed_at) {
+    const consumedAt = dt.consumed_at ? new Date(dt.consumed_at) : null;
+    if (consumedAt && Date.now() - consumedAt.getTime() > REUSE_WINDOW_MS) {
       return new NextResponse("This download link has already been used.", {
         status: 410,
       });
@@ -58,55 +64,73 @@ export async function GET(
       });
     }
 
-    const ip = getClientIP(request);
-    const userAgent = request.headers.get("user-agent") || "";
-    const ipHash = ip !== "unknown" ? hashIP(ip) : null;
-    const geo =
-      ip !== "unknown" ? parseGeo(ip) : { country: null, city: null };
-    const ua = parseUserAgent(userAgent);
-
     let downloadId: number | null = null;
 
-    try {
-      downloadId = await withTransaction(async (client) => {
-        const consumed = await client.query(
-          "UPDATE download_tokens SET consumed_at = NOW() WHERE token = $1 AND consumed_at IS NULL RETURNING id",
-          [token],
-        );
+    // If already consumed within the reuse window, reuse the existing download ID
+    if (consumedAt && dt.download_id) {
+      downloadId = dt.download_id;
+    } else {
+      // First use: consume the token and record the download
+      const ip = getClientIP(request);
+      const userAgent = request.headers.get("user-agent") || "";
+      const ipHash = ip !== "unknown" ? hashIP(ip) : null;
+      const geo =
+        ip !== "unknown" ? parseGeo(ip) : { country: null, city: null };
+      const ua = parseUserAgent(userAgent);
 
-        if (consumed.rowCount === 0) {
-          return null;
+      try {
+        downloadId = await withTransaction(async (client) => {
+          const consumed = await client.query(
+            "UPDATE download_tokens SET consumed_at = NOW() WHERE token = $1 AND consumed_at IS NULL RETURNING id",
+            [token],
+          );
+
+          if (consumed.rowCount === 0) {
+            return null;
+          }
+
+          const result = await client.query<{ id: number }>(
+            `INSERT INTO photo_downloads (share_link_id, photo_id, ip_hash, country, city, user_agent, device_type, browser, os, email, download_token_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+             RETURNING id`,
+            [
+              dt.share_link_id,
+              dt.photo_id,
+              ipHash,
+              geo.country,
+              geo.city,
+              userAgent || null,
+              ua.device_type,
+              ua.browser,
+              ua.os,
+              dt.email,
+              dt.id,
+            ],
+          );
+          return result.rows[0].id;
+        });
+      } catch (err) {
+        console.error("Failed to consume token:", err);
+        return new NextResponse("Failed to process download.", { status: 500 });
+      }
+
+      if (downloadId === null) {
+        // Race condition: another request consumed it between our check and update.
+        // Re-fetch to get the download_id and allow reuse within window.
+        const refreshed = await getDownloadToken(token);
+        if (
+          refreshed?.consumed_at &&
+          Date.now() - new Date(refreshed.consumed_at).getTime() <=
+            REUSE_WINDOW_MS &&
+          refreshed.download_id
+        ) {
+          downloadId = refreshed.download_id;
+        } else {
+          return new NextResponse("This download link has already been used.", {
+            status: 410,
+          });
         }
-
-        const result = await client.query<{ id: number }>(
-          `INSERT INTO photo_downloads (share_link_id, photo_id, ip_hash, country, city, user_agent, device_type, browser, os, email, download_token_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-           RETURNING id`,
-          [
-            dt.share_link_id,
-            dt.photo_id,
-            ipHash,
-            geo.country,
-            geo.city,
-            userAgent || null,
-            ua.device_type,
-            ua.browser,
-            ua.os,
-            dt.email,
-            dt.id,
-          ],
-        );
-        return result.rows[0].id;
-      });
-    } catch (err) {
-      console.error("Failed to consume token:", err);
-      return new NextResponse("Failed to process download.", { status: 500 });
-    }
-
-    if (downloadId === null) {
-      return new NextResponse("This download link has already been used.", {
-        status: 410,
-      });
+      }
     }
 
     const data = await readPhoto(dt.filename);

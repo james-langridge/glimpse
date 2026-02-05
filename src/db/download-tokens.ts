@@ -36,6 +36,7 @@ export interface DownloadToken {
   link_revoked: boolean;
   link_expires_at: string;
   allow_downloads: boolean;
+  download_id: number | null;
 }
 
 export async function getDownloadToken(
@@ -43,10 +44,12 @@ export async function getDownloadToken(
 ): Promise<DownloadToken | null> {
   const result = await sql<DownloadToken>`
     SELECT dt.*, p.filename, p.original_name,
-           sl.code, sl.revoked AS link_revoked, sl.expires_at AS link_expires_at, sl.allow_downloads
+           sl.code, sl.revoked AS link_revoked, sl.expires_at AS link_expires_at, sl.allow_downloads,
+           pd.id AS download_id
     FROM download_tokens dt
     JOIN photos p ON p.id = dt.photo_id
     JOIN share_links sl ON sl.id = dt.share_link_id
+    LEFT JOIN photo_downloads pd ON pd.download_token_id = dt.id
     WHERE dt.token = ${token}
   `;
   return result.rows[0] ?? null;
