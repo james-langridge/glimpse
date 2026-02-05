@@ -29,6 +29,8 @@ Unlike sharing photos through social media, messaging apps, or cloud storage ser
 - **No viewer accounts.** The people you share with don't need to create accounts, hand over their email address, or download an app. Less data floating around means less risk.
 - **Photos are cleaned up automatically.** Photos that aren't part of any active share link are automatically deleted after a configurable number of days (default 30). Cleanup runs on a built-in scheduler — no cron job required. Nothing lingers on the server forgotten.
 - **Download protection.** The gallery viewer prevents casual right-click saving and image dragging. (This won't stop a determined technical user, but it discourages casual copying.)
+- **Email-gated downloads.** When configured with a Resend API key, Glimpse requires recipients to provide their email address before downloading photos. A time-limited download token is sent to their inbox, creating an accountability trail. The admin can see which email addresses downloaded which photos.
+- **Per-link download control.** The admin can enable or disable downloads on each share link individually. When downloads are disabled, the gallery is view-only.
 - **Invisible watermarking.** When photos are downloaded through a share link, Glimpse embeds three layers of invisible watermark: EXIF metadata (survives lossless operations), QIM pixel-domain (survives format conversion), and DCT frequency-domain (survives JPEG re-compression and mild resizing). Each watermark encodes the download ID, so leaked photos can be traced back to the specific download event. The admin panel includes a watermark extraction tool to check any image.
 - **No tracking by third parties.** Glimpse doesn't embed analytics scripts, social media pixels, or advertising trackers. The built-in analytics use IP hashing so even the server admin can't see the real IP addresses of viewers.
 - **Password-protected admin.** Only someone with the admin password can upload photos, create links, or view analytics. The login is rate-limited to prevent brute-force attacks.
@@ -37,17 +39,20 @@ Unlike sharing photos through social media, messaging apps, or cloud storage ser
 
 The admin panel lets you:
 
-- **Upload and manage a pool of photos** — see view counts and link usage at a glance, and drill into per-photo detail pages showing which links include each photo
+- **Upload and manage a pool of photos** — see view counts, download counts, and link usage at a glance, and drill into per-photo detail pages showing which links include each photo and download history
 
 ![Photo management](public/photos.png)
 
-- **Create share links** with selected photos and an expiry date, and **see all active, expired, and revoked links** at a glance. Revoke or delete links at any time.
+- **Create share links** with selected photos, an expiry date, optional captions, and per-link download permissions. **See all active, expired, and revoked links** at a glance. Bulk select to revoke or delete multiple links at once.
 
 ![Link management](public/links.png)
 
 - **View analytics**: how many times a link was viewed, from which countries, what devices, and how long people spent looking
 
 ![Analytics](public/analytics.png)
+
+- **Check watermarks**: upload any photo to the watermark checker to extract the embedded download ID and trace it back to the original download event
+- **Configure settings**: manage runtime settings like cleanup retention period from the admin panel
 
 ---
 
@@ -77,7 +82,7 @@ app/                    # Next.js App Router (pages + API routes)
 
 src/
   components/           # React client components
-  db/                   # Database queries (schema, photos, links, analytics)
+  db/                   # Database queries (schema, photos, links, analytics, downloads, settings)
   lib/                  # Business logic (auth, storage, rate-limiting, cleanup)
 ```
 
@@ -91,12 +96,15 @@ src/
 
 ### Database Schema
 
-Four tables:
+Seven tables:
 
-- **photos** -- uploaded photo metadata (dimensions, blur placeholder, file size)
-- **share_links** -- share codes, expiry dates, revocation status
-- **share_link_photos** -- junction table linking photos to share links with display order
+- **photos** -- uploaded photo metadata (dimensions, blur placeholder, file size, captions)
+- **share_links** -- share codes, expiry dates, revocation status, download permissions
+- **share_link_photos** -- junction table linking photos to share links with display order and per-link captions
 - **link_views** -- analytics records (hashed IP, geo, device, browser, session duration)
+- **settings** -- runtime configuration (e.g. cleanup retention period)
+- **photo_downloads** -- download analytics with optional email and token linkage
+- **download_tokens** -- email-gated download tokens with expiry and consumption tracking
 
 All foreign keys use `ON DELETE CASCADE`.
 
@@ -109,6 +117,8 @@ All foreign keys use `ON DELETE CASCADE`.
 | POST | `/api/lookup/[code]` | Validate a share code |
 | GET | `/api/shared-image/[code]/[filename]` | Serve a photo from an active link |
 | GET | `/api/download/[code]/[filename]` | Download a watermarked photo from an active link |
+| POST | `/api/download-request` | Request a download token via email |
+| GET | `/api/download-token/[token]` | Validate and consume a download token |
 | POST | `/api/analytics/duration` | Record session duration (beacon) |
 
 **Admin (session required):**
@@ -120,14 +130,24 @@ All foreign keys use `ON DELETE CASCADE`.
 | GET | `/api/photos` | List all photos (with view/link counts) |
 | POST | `/api/photos/upload` | Upload photos (multipart form data) |
 | GET | `/api/photos/[id]/detail` | Photo detail (metadata, links, view stats) |
+| PATCH | `/api/photos/[id]` | Update photo metadata |
 | DELETE | `/api/photos/[id]` | Delete a photo |
+| GET | `/api/photos/[id]/analytics` | Photo analytics (views, downloads) |
+| GET | `/api/photos/[id]/image` | Serve photo image for admin preview |
+| POST | `/api/photos/bulk-delete` | Bulk delete photos |
+| POST | `/api/photos/watermark/extract` | Extract watermark from an uploaded image |
 | GET/POST | `/api/links` | List links / Create a link |
 | GET | `/api/links/[id]` | Link detail (metadata, photos) |
-| PUT | `/api/links/[id]` | Update link (expiry, title, photos) |
+| PUT | `/api/links/[id]` | Update link (expiry, title, photos, downloads) |
 | DELETE | `/api/links/[id]` | Delete a link |
 | PATCH | `/api/links/[id]/revoke` | Revoke a link |
+| GET | `/api/links/[id]/analytics` | Link analytics (views, devices, geo) |
+| POST | `/api/links/[id]/duplicate` | Duplicate a link |
+| PUT | `/api/links/[id]/photos/[photoId]/caption` | Set per-link photo caption |
+| POST | `/api/links/bulk-delete` | Bulk delete links |
+| POST | `/api/links/bulk-revoke` | Bulk revoke links |
 | GET | `/api/analytics` | Fetch analytics data |
-| POST | `/api/photos/watermark/extract` | Extract watermark from an uploaded image |
+| GET/PUT | `/api/settings` | Read/update admin settings |
 
 **System:**
 
@@ -193,6 +213,14 @@ CLEANUP_SECRET=another-random-secret
 # (Optional) Number of days before unlinked photos are eligible for cleanup
 # Defaults to 30 if not set. Set to 0 to disable cleanup entirely.
 CLEANUP_DAYS=30
+
+# (Optional) API key for Resend email service
+# Required for email-gated downloads. If not set, download links are served directly.
+RESEND_API_KEY=re_xxxxxxxx
+
+# (Optional) Sender email address for download links
+# Defaults to onboarding@resend.dev if not set
+EMAIL_FROM=photos@example.com
 
 # (Optional) IANA timezone for displayed times, e.g. in OG previews
 # Defaults to the server timezone if not set

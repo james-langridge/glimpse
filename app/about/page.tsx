@@ -173,11 +173,28 @@ export default function About() {
             </li>
             <li>
               <span className="font-medium text-zinc-300">
+                Email-gated downloads.
+              </span>{" "}
+              When configured, recipients must provide their email address
+              before downloading photos. A time-limited download link is sent
+              to their inbox, creating an accountability trail.
+            </li>
+            <li>
+              <span className="font-medium text-zinc-300">
                 Download protection.
               </span>{" "}
               The gallery viewer prevents casual right-click saving and image
               dragging. This won&rsquo;t stop a determined technical user, but
               it discourages casual copying.
+            </li>
+            <li>
+              <span className="font-medium text-zinc-300">
+                Invisible watermarking.
+              </span>{" "}
+              Downloaded photos are invisibly watermarked with three layers
+              that survive re-saving, format conversion, and JPEG
+              re-compression. If a photo is leaked, the admin can trace it
+              back to the exact download.
             </li>
             <li>
               <span className="font-medium text-zinc-300">
