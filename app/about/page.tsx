@@ -173,6 +173,13 @@ export default function About() {
             </li>
             <li>
               <span className="font-medium text-zinc-300">
+                Per-link download control.
+              </span>{" "}
+              The admin can enable or disable downloads on each share link
+              individually. When downloads are off, the gallery is view-only.
+            </li>
+            <li>
+              <span className="font-medium text-zinc-300">
                 Email-gated downloads.
               </span>{" "}
               When configured, recipients must provide their email address
