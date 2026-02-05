@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-02-05
+
+### Added
+
+- Email-gated photo downloads with token-based access
+- Optional photo captions with link-level overrides
+- Admin preview mode to skip analytics on share pages
+- DCT frequency-domain watermark layer for stronger traceability
+- Invisible watermarking on downloaded photos
+- Per-link download permission with analytics
+- Multi-select with bulk delete and revoke on links page
+- Admin watermark checker page
+- Download history on photo detail pages
+- Create Link button on photo detail and selection toolbar
+- Error boundaries for public and admin pages
+- Loading spinners for Suspense fallbacks
+- Reusable Spinner component
+- Cleanup stats display alongside last run timestamp
+
+### Changed
+
+- Skip session decryption for unauthenticated public visitors
+- Redirect authenticated users from / to /admin
+- Use stored code case for preview URL
+
+### Fixed
+
+- Watermark verification failing on lossy formats
+- PhotoCard remount and toggle handler stability on photos page
+- Token reuse within 60s for iOS Safari compatibility
+- Locale pinned to en-GB for cleanup timestamp formatting
+
 ## [0.5.0] - 2026-02-02
 
 ### Added
@@ -118,6 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 Initial public release.
 
+[0.6.0]: https://github.com/james-langridge/glimpse/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/james-langridge/glimpse/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/james-langridge/glimpse/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/james-langridge/glimpse/compare/v0.2.0...v0.3.0
