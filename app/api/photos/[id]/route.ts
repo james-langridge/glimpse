@@ -1,7 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPhotoById, deletePhoto } from "@/src/db/photos";
+import {
+  getPhotoById,
+  deletePhoto,
+  updatePhotoCaption,
+} from "@/src/db/photos";
 import { getActiveLinksForPhoto } from "@/src/db/links";
 import { deletePhotoFile } from "@/src/lib/storage";
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const photo = await getPhotoById(id);
+
+    if (!photo) {
+      return NextResponse.json({ error: "Photo not found" }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const rawCaption = body.caption;
+    const caption =
+      typeof rawCaption === "string" ? rawCaption.trim() || null : null;
+
+    await updatePhotoCaption(id, caption);
+
+    return NextResponse.json({ success: true, caption });
+  } catch (e) {
+    console.error("Update failed:", e);
+    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+  }
+}
 
 export async function DELETE(
   request: NextRequest,

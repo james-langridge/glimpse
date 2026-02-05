@@ -10,6 +10,7 @@ export interface Photo {
   aspect_ratio: number;
   blur_data: string | null;
   file_size: number | null;
+  caption: string | null;
   content_hash: string | null;
   uploaded_at: Date;
 }
@@ -59,6 +60,10 @@ export async function getPhotoByHash(hash: string): Promise<Photo | null> {
     SELECT * FROM photos WHERE content_hash = ${hash}
   `;
   return result.rows[0] ?? null;
+}
+
+export async function updatePhotoCaption(id: string, caption: string | null) {
+  await sql`UPDATE photos SET caption = ${caption} WHERE id = ${id}`;
 }
 
 export async function deletePhoto(id: string) {
@@ -120,11 +125,12 @@ export async function getLinksForPhoto(photoId: string) {
     id: string;
     code: string;
     title: string | null;
+    link_caption: string | null;
     expires_at: Date;
     revoked: boolean;
     created_at: Date;
   }>`
-    SELECT sl.id, sl.code, sl.title, sl.expires_at, sl.revoked, sl.created_at
+    SELECT sl.id, sl.code, sl.title, slp.caption AS link_caption, sl.expires_at, sl.revoked, sl.created_at
     FROM share_links sl
     JOIN share_link_photos slp ON slp.share_link_id = sl.id
     WHERE slp.photo_id = ${photoId}

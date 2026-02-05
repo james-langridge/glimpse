@@ -9,6 +9,7 @@ interface LinkInfo {
   id: string;
   code: string;
   title: string | null;
+  link_caption: string | null;
   status: "active" | "expired" | "revoked";
   expires_at: string;
   revoked: boolean;
@@ -23,6 +24,7 @@ interface PhotoDetail {
   height: number | null;
   aspect_ratio: number;
   blur_data: string | null;
+  caption: string | null;
   file_size: number | null;
   uploaded_at: string;
   links: LinkInfo[];
@@ -59,6 +61,14 @@ export default function PhotoDetailPage() {
   const [photo, setPhoto] = useState<PhotoDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [editingCaption, setEditingCaption] = useState(false);
+  const [captionDraft, setCaptionDraft] = useState("");
+  const [savingCaption, setSavingCaption] = useState(false);
+  const [editingLinkCaption, setEditingLinkCaption] = useState<string | null>(
+    null,
+  );
+  const [linkCaptionDraft, setLinkCaptionDraft] = useState("");
+  const [savingLinkCaption, setSavingLinkCaption] = useState(false);
 
   const fetchPhoto = useCallback(async () => {
     try {
@@ -106,6 +116,72 @@ export default function PhotoDetailPage() {
       if (res.ok) router.push("/admin/photos");
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleSaveCaption() {
+    if (!photo) return;
+    setSavingCaption(true);
+    try {
+      const res = await fetch(`/api/photos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption: captionDraft }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPhoto({ ...photo, caption: data.caption });
+        setEditingCaption(false);
+      }
+    } finally {
+      setSavingCaption(false);
+    }
+  }
+
+  async function handleSaveLinkCaption(linkId: string) {
+    if (!photo) return;
+    setSavingLinkCaption(true);
+    try {
+      const res = await fetch(`/api/links/${linkId}/photos/${id}/caption`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption: linkCaptionDraft }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPhoto({
+          ...photo,
+          links: photo.links.map((l) =>
+            l.id === linkId ? { ...l, link_caption: data.caption } : l,
+          ),
+        });
+        setEditingLinkCaption(null);
+      }
+    } finally {
+      setSavingLinkCaption(false);
+    }
+  }
+
+  async function handleResetLinkCaption(linkId: string) {
+    if (!photo) return;
+    setSavingLinkCaption(true);
+    try {
+      const res = await fetch(`/api/links/${linkId}/photos/${id}/caption`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption: null }),
+      });
+      if (res.ok) {
+        setPhoto({
+          ...photo,
+          links: photo.links.map((l) =>
+            l.id === linkId ? { ...l, link_caption: null } : l,
+          ),
+        });
+        setEditingLinkCaption(null);
+      }
+    } finally {
+      setSavingLinkCaption(false);
     }
   }
 
@@ -159,6 +235,55 @@ export default function PhotoDetailPage() {
               }}
             />
           </div>
+        </div>
+
+        {/* Caption */}
+        <div className="mb-8">
+          <h2 className="mb-2 text-sm font-medium text-zinc-300">Caption</h2>
+          {editingCaption ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={captionDraft}
+                onChange={(e) => setCaptionDraft(e.target.value)}
+                placeholder="Enter a caption..."
+                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveCaption();
+                  if (e.key === "Escape") setEditingCaption(false);
+                }}
+              />
+              <button
+                onClick={handleSaveCaption}
+                disabled={savingCaption}
+                className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-200 disabled:opacity-50"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setEditingCaption(false)}
+                className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 transition hover:text-white"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className={photo.caption ? "text-sm text-white" : "text-sm text-zinc-500"}>
+                {photo.caption ?? "No caption"}
+              </span>
+              <button
+                onClick={() => {
+                  setCaptionDraft(photo.caption ?? "");
+                  setEditingCaption(true);
+                }}
+                className="text-xs text-zinc-500 transition hover:text-white"
+              >
+                Edit
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Stats cards */}
@@ -222,6 +347,7 @@ export default function PhotoDetailPage() {
                   <tr className="border-b border-zinc-800 text-zinc-400">
                     <th className="pb-3 pr-4 font-medium">Code</th>
                     <th className="pb-3 pr-4 font-medium">Title</th>
+                    <th className="pb-3 pr-4 font-medium">Caption</th>
                     <th className="pb-3 pr-4 font-medium">Status</th>
                     <th className="pb-3 pr-4 font-medium">Expires</th>
                     <th className="pb-3 font-medium">Created</th>
@@ -240,6 +366,73 @@ export default function PhotoDetailPage() {
                       <td className="py-2 pr-4 text-zinc-400">
                         {link.title ?? (
                           <span className="text-zinc-600">—</span>
+                        )}
+                      </td>
+                      <td
+                        className="py-2 pr-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {editingLinkCaption === link.id ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={linkCaptionDraft}
+                              onChange={(e) =>
+                                setLinkCaptionDraft(e.target.value)
+                              }
+                              placeholder="Override caption..."
+                              className="w-32 rounded border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter")
+                                  handleSaveLinkCaption(link.id);
+                                if (e.key === "Escape")
+                                  setEditingLinkCaption(null);
+                              }}
+                            />
+                            <button
+                              onClick={() => handleSaveLinkCaption(link.id)}
+                              disabled={savingLinkCaption}
+                              className="text-xs text-white hover:text-zinc-300"
+                            >
+                              Save
+                            </button>
+                            {link.link_caption !== null && (
+                              <button
+                                onClick={() =>
+                                  handleResetLinkCaption(link.id)
+                                }
+                                disabled={savingLinkCaption}
+                                className="text-xs text-zinc-500 hover:text-zinc-300"
+                              >
+                                Reset
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setEditingLinkCaption(null)}
+                              className="text-xs text-zinc-500 hover:text-zinc-300"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setLinkCaptionDraft(link.link_caption ?? "");
+                              setEditingLinkCaption(link.id);
+                            }}
+                            className="text-left"
+                          >
+                            {link.link_caption ? (
+                              <span className="text-zinc-200">
+                                {link.link_caption}
+                              </span>
+                            ) : photo.caption ? (
+                              <span className="text-zinc-600">(default)</span>
+                            ) : (
+                              <span className="text-zinc-600">—</span>
+                            )}
+                          </button>
                         )}
                       </td>
                       <td className="py-2 pr-4">

@@ -101,4 +101,12 @@ export async function initializeDatabase() {
   await query(`
     CREATE INDEX IF NOT EXISTS idx_photo_downloads_link ON photo_downloads(share_link_id, downloaded_at DESC)
   `);
+
+  await query(`
+    ALTER TABLE photos ADD COLUMN IF NOT EXISTS caption TEXT
+  `);
+
+  await query(`
+    ALTER TABLE share_link_photos ADD COLUMN IF NOT EXISTS caption TEXT
+  `);
 }

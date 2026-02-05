@@ -59,8 +59,8 @@ export async function POST(
       );
       for (let i = 0; i < photos.length; i++) {
         await client.query(
-          "INSERT INTO share_link_photos (share_link_id, photo_id, display_order) VALUES ($1, $2, $3)",
-          [newId, photos[i].id, i],
+          "INSERT INTO share_link_photos (share_link_id, photo_id, display_order, caption) VALUES ($1, $2, $3, $4)",
+          [newId, photos[i].id, i, photos[i].link_caption],
         );
       }
     });

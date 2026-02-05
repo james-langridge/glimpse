@@ -7,6 +7,7 @@ interface Photo {
   height: number | null;
   aspect_ratio: number;
   blur_data: string | null;
+  resolved_caption: string | null;
 }
 
 interface ShareGalleryProps {
@@ -22,7 +23,7 @@ export default function ShareGallery({ photos, code, allowDownloads }: ShareGall
   if (photos.length === 1) {
     const photo = photos[0];
     return (
-      <div className="flex items-center justify-center p-4">
+      <div className="flex flex-col items-center justify-center p-4">
         <div className="relative max-h-[85vh] max-w-[90vw] overflow-hidden rounded-lg">
           <ProtectedImage
             src={`/api/shared-image/${code}/${photo.filename}`}
@@ -37,6 +38,11 @@ export default function ShareGallery({ photos, code, allowDownloads }: ShareGall
             <DownloadButton code={code} filename={photo.filename} size="lg" />
           )}
         </div>
+        {photo.resolved_caption && (
+          <p className="mt-3 text-center text-sm text-zinc-400">
+            {photo.resolved_caption}
+          </p>
+        )}
       </div>
     );
   }
@@ -65,6 +71,13 @@ export default function ShareGallery({ photos, code, allowDownloads }: ShareGall
                 className="h-full w-full"
                 blurDataURL={photo.blur_data}
               />
+              {photo.resolved_caption && (
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2.5 pt-6">
+                  <p className="text-sm text-white/90">
+                    {photo.resolved_caption}
+                  </p>
+                </div>
+              )}
               {allowDownloads && (
                 <DownloadButton code={code} filename={photo.filename} />
               )}
