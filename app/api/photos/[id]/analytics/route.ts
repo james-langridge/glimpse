@@ -8,6 +8,10 @@ import {
   getGeoBreakdownForPhoto,
   getRecentViewsForPhoto,
 } from "@/src/db/analytics";
+import {
+  getDownloadCountForPhoto,
+  getDownloadsForPhoto,
+} from "@/src/db/downloads";
 
 export async function GET(
   request: NextRequest,
@@ -25,15 +29,25 @@ export async function GET(
     const days = parseInt(searchParams.get("days") ?? "30", 10);
     const validDays = [7, 30, 90].includes(days) ? days : 30;
 
-    const [overview, viewsOverTime, devices, browsers, geo, recent] =
-      await Promise.all([
-        getOverviewStatsForPhoto(id, validDays),
-        getViewsOverTimeForPhoto(id, validDays),
-        getDeviceBreakdownForPhoto(id, validDays),
-        getBrowserBreakdownForPhoto(id, validDays),
-        getGeoBreakdownForPhoto(id, validDays),
-        getRecentViewsForPhoto(id, 20, validDays),
-      ]);
+    const [
+      overview,
+      viewsOverTime,
+      devices,
+      browsers,
+      geo,
+      recent,
+      downloadStats,
+      recentDownloads,
+    ] = await Promise.all([
+      getOverviewStatsForPhoto(id, validDays),
+      getViewsOverTimeForPhoto(id, validDays),
+      getDeviceBreakdownForPhoto(id, validDays),
+      getBrowserBreakdownForPhoto(id, validDays),
+      getGeoBreakdownForPhoto(id, validDays),
+      getRecentViewsForPhoto(id, 20, validDays),
+      getDownloadCountForPhoto(id, validDays),
+      getDownloadsForPhoto(id, 20, validDays),
+    ]);
 
     return NextResponse.json({
       overview,
@@ -42,6 +56,8 @@ export async function GET(
       browsers,
       geo,
       recent,
+      downloadStats,
+      recentDownloads,
     });
   } catch (e) {
     console.error("Failed to fetch photo analytics:", e);

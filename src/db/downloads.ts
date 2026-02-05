@@ -124,3 +124,70 @@ export async function getDownloadsForLink(
   );
   return result.rows;
 }
+
+export interface PhotoDownload {
+  id: number;
+  downloaded_at: string;
+  share_link_id: string;
+  code: string;
+  email: string | null;
+  country: string | null;
+  city: string | null;
+  device_type: string | null;
+  browser: string | null;
+  os: string | null;
+}
+
+export async function getDownloadCountForPhoto(photoId: string, days?: number) {
+  const conditions = ["photo_id = $1"];
+  const values: (string | number)[] = [photoId];
+  if (days) {
+    values.push(days);
+    conditions.push(
+      `downloaded_at >= NOW() - $${values.length} * INTERVAL '1 day'`,
+    );
+  }
+  const result = await query<{
+    total_downloads: string;
+    unique_downloaders: string;
+  }>(
+    `SELECT
+      COUNT(*) as total_downloads,
+      COUNT(DISTINCT COALESCE(ip_hash, 'unknown')) as unique_downloaders
+     FROM photo_downloads
+     WHERE ${conditions.join(" AND ")}`,
+    values,
+  );
+  const row = result.rows[0];
+  return {
+    total_downloads: parseInt(row.total_downloads, 10),
+    unique_downloaders: parseInt(row.unique_downloaders, 10),
+  };
+}
+
+export async function getDownloadsForPhoto(
+  photoId: string,
+  limit: number = 20,
+  days?: number,
+) {
+  const conditions = ["pd.photo_id = $1"];
+  const values: (string | number)[] = [photoId];
+  if (days) {
+    values.push(days);
+    conditions.push(
+      `pd.downloaded_at >= NOW() - $${values.length} * INTERVAL '1 day'`,
+    );
+  }
+  values.push(limit);
+  const result = await query<PhotoDownload>(
+    `SELECT pd.id, pd.downloaded_at, pd.share_link_id, sl.code,
+            pd.email, pd.country, pd.city, pd.device_type, pd.browser, pd.os
+     FROM photo_downloads pd
+     JOIN share_links sl ON sl.id = pd.share_link_id
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY pd.downloaded_at DESC
+     LIMIT $${values.length}`,
+    values,
+  );
+  return result.rows;
+}
