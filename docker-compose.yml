@@ -35,6 +35,12 @@ services:
       DISPLAY_TIMEZONE: ${DISPLAY_TIMEZONE:-}
     volumes:
       - photo_storage:/data/photos
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
 volumes:
   postgres_data:
