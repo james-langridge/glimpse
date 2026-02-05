@@ -30,6 +30,7 @@ export interface DownloadDetail {
   share_link_id: string;
   code: string;
   title: string | null;
+  email: string | null;
   ip_hash: string | null;
   country: string | null;
   city: string | null;
@@ -44,7 +45,7 @@ export async function getDownloadById(
   const result = await query<DownloadDetail>(
     `SELECT pd.id, pd.downloaded_at, pd.photo_id, p.filename, p.original_name,
             pd.share_link_id, sl.code, sl.title,
-            pd.ip_hash, pd.country, pd.city, pd.device_type, pd.browser, pd.os
+            pd.email, pd.ip_hash, pd.country, pd.city, pd.device_type, pd.browser, pd.os
      FROM photo_downloads pd
      JOIN photos p ON p.id = pd.photo_id
      JOIN share_links sl ON sl.id = pd.share_link_id
