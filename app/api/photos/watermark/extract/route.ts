@@ -20,13 +20,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    if (buffer.length > MAX_UPLOAD_SIZE) {
+    if (file.size > MAX_UPLOAD_SIZE) {
       return NextResponse.json(
         { error: "File too large" },
         { status: 413 },
       );
     }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
 
     const result = await extractWatermark(buffer);
 

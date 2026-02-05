@@ -2,23 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-
-interface DownloadDetail {
-  id: number;
-  downloaded_at: string;
-  photo_id: string;
-  filename: string;
-  original_name: string | null;
-  share_link_id: string;
-  code: string;
-  title: string | null;
-  email: string | null;
-  country: string | null;
-  city: string | null;
-  device_type: string | null;
-  browser: string | null;
-  os: string | null;
-}
+import type { DownloadDetail } from "@/src/db/downloads";
 
 interface ExtractResult {
   found: boolean;
@@ -82,6 +66,7 @@ export default function WatermarkPage() {
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragging(false);
+    if (loading) return;
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
   }
@@ -127,8 +112,12 @@ export default function WatermarkPage() {
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onClick={() => fileInputRef.current?.click()}
-          className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition ${
+          onClick={() => !loading && fileInputRef.current?.click()}
+          className={`rounded-lg border-2 border-dashed p-8 text-center transition ${
+            loading
+              ? "cursor-wait opacity-60"
+              : "cursor-pointer"
+          } ${
             dragging
               ? "border-violet-500 bg-violet-500/10"
               : "border-zinc-700 hover:border-zinc-500"
