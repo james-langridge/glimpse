@@ -185,80 +185,78 @@ Extraction tries each layer in order (cheapest first) and returns the first succ
 
 ## Self-Hosting
 
-### Prerequisites
+### Docker Compose (recommended)
 
-- Node.js 18+
-- PostgreSQL 14+
-- A filesystem path for photo storage (persistent across deployments)
-
-### Environment Variables
-
-Create a `.env.local` file in the project root:
-
-```env
-# Admin password for the Glimpse dashboard
-ADMIN_PASSWORD=your-strong-password-here
-
-# Secret for encrypting session cookies (minimum 32 characters)
-SESSION_SECRET=at-least-32-characters-of-random-text
-
-# PostgreSQL connection string
-DATABASE_URL=postgresql://user:password@localhost:5432/glimpse
-
-# Filesystem path where uploaded photos are stored
-PHOTO_STORAGE_PATH=/data/photos
-
-# Base URL of your Glimpse instance (used for generating share links)
-SITE_URL=https://photos.example.com
-
-# (Optional) Secret token for the cleanup API endpoint
-# Only needed if you want to trigger cleanup externally (e.g., via cron)
-CLEANUP_SECRET=another-random-secret
-
-# (Optional) Number of days before unlinked photos are eligible for cleanup
-# Defaults to 30 if not set. Set to 0 to disable cleanup entirely.
-CLEANUP_DAYS=30
-
-# (Optional) API key for Resend email service
-# Required for email-gated downloads. If not set, download links are served directly.
-RESEND_API_KEY=re_xxxxxxxx
-
-# (Optional) Sender email address for download links
-# Defaults to onboarding@resend.dev if not set
-EMAIL_FROM=photos@example.com
-
-# (Optional) IANA timezone for displayed times, e.g. in OG previews
-# Defaults to the server timezone if not set
-DISPLAY_TIMEZONE=Europe/London
-```
-
-### Setup
+The quickest way to run Glimpse. Docker Compose handles everything — the app, PostgreSQL, and persistent storage — in a single command. All you need is a machine with [Docker](https://docs.docker.com/get-docker/) installed.
 
 ```bash
-# Clone the repository
 git clone https://github.com/james-langridge/glimpse.git
 cd glimpse
 
-# Install dependencies
-npm install
-
-# Create the photo storage directory
-mkdir -p /data/photos
-
-# Start the development server
-npm run dev
+# Copy the example env file
+cp .env.example .env
 ```
 
-The database tables are created automatically on first startup. No manual migration step is needed.
+Edit `.env` and set these three values:
 
-### Production Build
+```env
+ADMIN_PASSWORD=your-strong-password
+SESSION_SECRET=at-least-32-characters-of-random-text
+POSTGRES_PASSWORD=a-strong-database-password
+```
+
+Then start everything:
 
 ```bash
+docker compose up -d
+```
+
+Glimpse will be available at `http://localhost:3000`. The database and photo storage use Docker named volumes, so your data persists across container restarts.
+
+To update after pulling new changes:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+**Optional settings** you can add to `.env`:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SITE_URL` | Public URL for share links | `http://localhost:3000` |
+| `CLEANUP_DAYS` | Days before unlinked photos are deleted (0 to disable) | `30` |
+| `CLEANUP_SECRET` | Bearer token for external cleanup trigger | |
+| `RESEND_API_KEY` | Resend API key for email-gated downloads | |
+| `EMAIL_FROM` | Sender address for download emails | `onboarding@resend.dev` |
+| `DISPLAY_TIMEZONE` | IANA timezone for displayed times | Server timezone |
+
+### Manual Setup (without Docker)
+
+If you prefer to run Glimpse directly with Node.js, you'll need to provide your own PostgreSQL instance and manage the process yourself.
+
+**Prerequisites:** Node.js 18+, PostgreSQL 14+, a persistent filesystem path for photo storage.
+
+Create a `.env.local` file:
+
+```env
+ADMIN_PASSWORD=your-strong-password
+SESSION_SECRET=at-least-32-characters-of-random-text
+DATABASE_URL=postgresql://user:password@localhost:5432/glimpse
+PHOTO_STORAGE_PATH=/data/photos
+SITE_URL=https://photos.example.com
+```
+
+```bash
+git clone https://github.com/james-langridge/glimpse.git
+cd glimpse
+npm install
+mkdir -p /data/photos
 npm run build
 npm start
 ```
 
-The production server runs on port 3000 by default. Use a reverse proxy (Nginx, Caddy) to add HTTPS.
+The database tables are created automatically on first startup. The production server runs on port 3000 by default. Use a reverse proxy (Nginx, Caddy) to add HTTPS.
 
 ### Photo Cleanup
 
@@ -269,24 +267,13 @@ Glimpse automatically cleans up photos that are older than `CLEANUP_DAYS` days (
 **External trigger (optional):** You can also trigger cleanup manually or via cron using the API endpoint. This requires setting the `CLEANUP_SECRET` environment variable.
 
 ```bash
-# Run cleanup on demand
 curl -sf -X POST https://photos.example.com/api/cleanup \
   -H "Authorization: Bearer YOUR_CLEANUP_SECRET"
 ```
 
-**Railway (optional):**
-
-The repo includes a `Dockerfile.cleanup` for running cleanup as a separate scheduled Railway service. This is no longer required since cleanup runs on the built-in scheduler, but it remains available if you prefer external scheduling:
-
-1. Add a new service in your Railway project pointing at this repo
-2. Set the Dockerfile path to `Dockerfile.cleanup`
-3. Add the `SITE_URL` and `CLEANUP_SECRET` environment variables (matching the values on your main app service)
-4. Enable a cron schedule in the service settings (e.g. `0 3 * * *` for daily at 3 AM UTC)
-5. Set the watch path to `/Dockerfile.cleanup` so unrelated code changes don't trigger a redeploy
-
-Railway runs the service's start command on the cron schedule, then the container exits until the next run.
-
 ### Reverse Proxy (Nginx Example)
+
+If you're running Glimpse behind a reverse proxy (common with both Docker Compose and manual setups), here's an Nginx example:
 
 ```nginx
 server {
@@ -309,29 +296,6 @@ server {
 ```
 
 The `X-Forwarded-For` header is important -- Glimpse uses it for rate limiting and analytics geolocation.
-
-### Docker Compose
-
-The easiest way to run Glimpse. This starts the app and a PostgreSQL database together.
-
-```bash
-# Copy the example env file and set your passwords
-cp .env.example .env
-
-# Edit .env — at minimum set ADMIN_PASSWORD, SESSION_SECRET, and POSTGRES_PASSWORD
-# SITE_URL should be your public URL (default: http://localhost:3000)
-
-# Start everything
-docker compose up -d
-```
-
-Glimpse will be available at `http://localhost:3000`. The database and photo storage use Docker named volumes, so your data persists across restarts.
-
-To rebuild after pulling new changes:
-
-```bash
-docker compose up -d --build
-```
 
 ---
 
