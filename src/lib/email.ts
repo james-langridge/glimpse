@@ -1,6 +1,13 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend;
+
+function getResend() {
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 function escapeHtml(s: string): string {
   return s
@@ -24,7 +31,7 @@ export async function sendDownloadEmail({
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
   const context = linkTitle ? ` from "${escapeHtml(linkTitle)}"` : "";
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from,
     to,
     subject: "Your download link",
