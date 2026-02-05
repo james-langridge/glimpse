@@ -24,11 +24,11 @@ export async function insertDownload(download: {
 export interface DownloadDetail {
   id: number;
   downloaded_at: string;
-  photo_id: string;
-  filename: string;
+  photo_id: string | null;
+  filename: string | null;
   original_name: string | null;
-  share_link_id: string;
-  code: string;
+  share_link_id: string | null;
+  code: string | null;
   title: string | null;
   email: string | null;
   ip_hash: string | null;
@@ -47,8 +47,8 @@ export async function getDownloadById(
             pd.share_link_id, sl.code, sl.title,
             pd.email, pd.ip_hash, pd.country, pd.city, pd.device_type, pd.browser, pd.os
      FROM photo_downloads pd
-     JOIN photos p ON p.id = pd.photo_id
-     JOIN share_links sl ON sl.id = pd.share_link_id
+     LEFT JOIN photos p ON p.id = pd.photo_id
+     LEFT JOIN share_links sl ON sl.id = pd.share_link_id
      WHERE pd.id = $1`,
     [id],
   );

@@ -85,8 +85,8 @@ export async function initializeDatabase() {
   await query(`
     CREATE TABLE IF NOT EXISTS photo_downloads (
       id SERIAL PRIMARY KEY,
-      share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE CASCADE,
-      photo_id VARCHAR(8) REFERENCES photos(id) ON DELETE CASCADE,
+      share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE SET NULL,
+      photo_id VARCHAR(8) REFERENCES photos(id) ON DELETE SET NULL,
       downloaded_at TIMESTAMPTZ DEFAULT NOW(),
       ip_hash VARCHAR(64),
       country VARCHAR(100),
@@ -130,5 +130,20 @@ export async function initializeDatabase() {
 
   await query(`
     ALTER TABLE photo_downloads ADD COLUMN IF NOT EXISTS download_token_id VARCHAR(8)
+  `);
+
+  // Migrate existing CASCADE constraints to SET NULL so download records
+  // survive photo/link deletion — needed for watermark traceability.
+  await query(`
+    ALTER TABLE photo_downloads
+      DROP CONSTRAINT IF EXISTS photo_downloads_share_link_id_fkey,
+      ADD CONSTRAINT photo_downloads_share_link_id_fkey
+        FOREIGN KEY (share_link_id) REFERENCES share_links(id) ON DELETE SET NULL
+  `);
+  await query(`
+    ALTER TABLE photo_downloads
+      DROP CONSTRAINT IF EXISTS photo_downloads_photo_id_fkey,
+      ADD CONSTRAINT photo_downloads_photo_id_fkey
+        FOREIGN KEY (photo_id) REFERENCES photos(id) ON DELETE SET NULL
   `);
 }

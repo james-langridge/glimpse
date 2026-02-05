@@ -238,25 +238,35 @@ export default function WatermarkPage() {
                       </div>
                       <div>
                         <p className="text-zinc-500">Photo</p>
-                        <Link
-                          href={`/admin/photos/${result.download.photo_id}`}
-                          className="text-violet-400 hover:underline"
-                        >
-                          {result.download.original_name ?? result.download.filename}
-                        </Link>
+                        {result.download.photo_id ? (
+                          <Link
+                            href={`/admin/photos/${result.download.photo_id}`}
+                            className="text-violet-400 hover:underline"
+                          >
+                            {result.download.original_name ?? result.download.filename}
+                          </Link>
+                        ) : (
+                          <p className="text-zinc-400">Deleted</p>
+                        )}
                       </div>
                       <div>
                         <p className="text-zinc-500">Share Link</p>
-                        <Link
-                          href={`/admin/links/${result.download.share_link_id}`}
-                          className="font-mono text-violet-400 hover:underline"
-                        >
-                          {result.download.code}
-                        </Link>
-                        {result.download.title && (
-                          <p className="text-xs text-zinc-500">
-                            {result.download.title}
-                          </p>
+                        {result.download.share_link_id ? (
+                          <>
+                            <Link
+                              href={`/admin/links/${result.download.share_link_id}`}
+                              className="font-mono text-violet-400 hover:underline"
+                            >
+                              {result.download.code}
+                            </Link>
+                            {result.download.title && (
+                              <p className="text-xs text-zinc-500">
+                                {result.download.title}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-zinc-400">Deleted</p>
                         )}
                       </div>
                       <div>
