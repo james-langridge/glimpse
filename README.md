@@ -310,43 +310,28 @@ server {
 
 The `X-Forwarded-For` header is important -- Glimpse uses it for rate limiting and analytics geolocation.
 
-### Docker (Example)
+### Docker Compose
 
-Here's a starting point for running the main app in Docker:
-
-```dockerfile
-FROM node:20-alpine
-
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-ENV NODE_ENV=production
-EXPOSE 3000
-
-CMD ["npm", "start"]
-```
-
-Run with:
+The easiest way to run Glimpse. This starts the app and a PostgreSQL database together.
 
 ```bash
-docker run -d \
-  --name glimpse \
-  -p 3000:3000 \
-  -v /path/to/photos:/data/photos \
-  -e DATABASE_URL="postgresql://user:pass@host:5432/glimpse" \
-  -e ADMIN_PASSWORD="your-password" \
-  -e SESSION_SECRET="your-session-secret" \
-  -e PHOTO_STORAGE_PATH="/data/photos" \
-  -e SITE_URL="https://photos.example.com" \
-  -e CLEANUP_SECRET="your-cleanup-secret" \
-  -e DISPLAY_TIMEZONE="Europe/London" \
-  glimpse
+# Copy the example env file and set your passwords
+cp .env.example .env
+
+# Edit .env — at minimum set ADMIN_PASSWORD, SESSION_SECRET, and POSTGRES_PASSWORD
+# SITE_URL should be your public URL (default: http://localhost:3000)
+
+# Start everything
+docker compose up -d
 ```
 
-Make sure the photo storage path inside the container matches `PHOTO_STORAGE_PATH` and is backed by a persistent volume.
+Glimpse will be available at `http://localhost:3000`. The database and photo storage use Docker named volumes, so your data persists across restarts.
+
+To rebuild after pulling new changes:
+
+```bash
+docker compose up -d --build
+```
 
 ---
 

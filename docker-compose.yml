@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: glimpse
+      POSTGRES_USER: glimpse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glimpse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://glimpse:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/glimpse
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      PHOTO_STORAGE_PATH: /data/photos
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+      CLEANUP_DAYS: ${CLEANUP_DAYS:-30}
+      CLEANUP_SECRET: ${CLEANUP_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      DISPLAY_TIMEZONE: ${DISPLAY_TIMEZONE:-}
+    volumes:
+      - photo_storage:/data/photos
+
+volumes:
+  postgres_data:
+  photo_storage:
