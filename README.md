@@ -52,7 +52,12 @@ The admin panel lets you:
 ![Analytics](public/analytics.png)
 
 - **Check watermarks**: upload any photo to the watermark checker to extract the embedded download ID and trace it back to the original download event
+
+![Watermark checker](public/watermark.png)
+
 - **Configure settings**: manage runtime settings like cleanup retention period from the admin panel
+
+![Settings](public/settings.png)
 
 ---
 
