@@ -42,6 +42,10 @@ export interface DownloadToken {
 export async function getDownloadToken(
   token: string,
 ): Promise<DownloadToken | null> {
+  // Invariant: each token has at most one photo_downloads record, enforced by
+  // the atomic UPDATE...WHERE consumed_at IS NULL in the download-token route.
+  // The LEFT JOIN returns one row; if multiple records somehow exist, the first
+  // is returned (non-deterministic order, but this shouldn't happen in practice).
   const result = await sql<DownloadToken>`
     SELECT dt.*, p.filename, p.original_name,
            sl.code, sl.revoked AS link_revoked, sl.expires_at AS link_expires_at, sl.allow_downloads,

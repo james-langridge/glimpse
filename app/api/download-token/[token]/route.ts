@@ -9,6 +9,7 @@ import { hashIP, parseGeo, parseUserAgent } from "@/src/lib/analytics";
 // iOS Safari (and some other browsers) send preflight/preview requests before
 // the actual download. If we mark the token as consumed on the first request,
 // the real download fails. Allow repeated use within 60 seconds of first use.
+// Must be much shorter than token expiry (1 hour) to maintain security intent.
 const REUSE_WINDOW_MS = 60_000;
 
 const MIME_TYPES: Record<string, string> = {
@@ -68,6 +69,9 @@ export async function GET(
 
     // If already consumed within the reuse window, reuse the existing download ID
     if (consumedAt && dt.download_id) {
+      console.debug(
+        `Token reuse: ${token.slice(0, 8)}... (${Date.now() - consumedAt.getTime()}ms since first use)`,
+      );
       downloadId = dt.download_id;
     } else {
       // First use: consume the token and record the download
