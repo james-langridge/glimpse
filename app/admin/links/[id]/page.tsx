@@ -404,7 +404,17 @@ export default function LinkDetailPage() {
         </div>
 
         {/* Actions */}
-        <div className="mb-8 flex gap-3">
+        <div className="mb-8 flex flex-wrap gap-3">
+          {link.status === "active" && (
+            <a
+              href={`/${link.code.toLowerCase()}?preview=true`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg bg-zinc-700/30 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700/50"
+            >
+              Preview
+            </a>
+          )}
           <button
             onClick={handleDuplicate}
             className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-400 transition hover:bg-indigo-600/30"

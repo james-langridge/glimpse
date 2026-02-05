@@ -6,6 +6,7 @@ import { getPhotosForCode } from "@/src/db/links";
 import { insertView } from "@/src/db/analytics";
 import { hashIP, isBot, parseGeo, parseUserAgent } from "@/src/lib/analytics";
 import { getConfig } from "@/src/lib/config";
+import { getSession } from "@/src/lib/auth";
 import ShareGallery from "@/src/components/ShareGallery";
 import DurationTracker from "@/src/components/DurationTracker";
 import Footer from "@/src/components/Footer";
@@ -13,6 +14,7 @@ import ExpiryCountdown from "@/src/components/ExpiryCountdown";
 
 interface Props {
   params: Promise<{ code: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 // Guard against matching admin/login routes
@@ -90,7 +92,7 @@ async function recordView(linkId: string): Promise<number | null> {
   }
 }
 
-export default async function SharePage({ params }: Props) {
+export default async function SharePage({ params, searchParams }: Props) {
   const { code } = await params;
   const upperCode = code.toUpperCase();
 
@@ -129,9 +131,16 @@ export default async function SharePage({ params }: Props) {
     );
   }
 
+  const { preview } = await searchParams;
+  let isPreview = false;
+  if (preview === "true") {
+    const session = await getSession();
+    isPreview = session.isLoggedIn === true;
+  }
+
   const [photos, viewId] = await Promise.all([
     getPhotosForCode(upperCode),
-    recordView(link.id),
+    isPreview ? Promise.resolve(null) : recordView(link.id),
   ]);
 
   if (photos.length === 0) {
@@ -149,6 +158,11 @@ export default async function SharePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-zinc-950">
+      {isPreview && (
+        <div className="bg-amber-600/20 px-4 py-2 text-center text-sm text-amber-400">
+          Preview mode — analytics are not being recorded
+        </div>
+      )}
       {link.title && (
         <h1 className="px-4 pt-8 text-center text-2xl font-light tracking-widest text-white">
           {link.title}
