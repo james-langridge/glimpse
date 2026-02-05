@@ -103,10 +103,10 @@ export async function initializeDatabase() {
   `);
 
   await query(`
-    ALTER TABLE photos ADD COLUMN IF NOT EXISTS caption TEXT
+    ALTER TABLE photos ADD COLUMN IF NOT EXISTS caption VARCHAR(500)
   `);
 
   await query(`
-    ALTER TABLE share_link_photos ADD COLUMN IF NOT EXISTS caption TEXT
+    ALTER TABLE share_link_photos ADD COLUMN IF NOT EXISTS caption VARCHAR(500)
   `);
 }

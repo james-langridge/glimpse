@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLinkById } from "@/src/db/links";
-import { updateLinkPhotoCaption } from "@/src/db/links";
+import { getLinkById, updateLinkPhotoCaption } from "@/src/db/links";
+
+const MAX_CAPTION_LENGTH = 500;
 
 export async function PUT(
   request: NextRequest,
@@ -19,7 +20,20 @@ export async function PUT(
     const caption =
       typeof rawCaption === "string" ? rawCaption.trim() || null : null;
 
-    await updateLinkPhotoCaption(id, photoId, caption);
+    if (caption && caption.length > MAX_CAPTION_LENGTH) {
+      return NextResponse.json(
+        { error: "Caption too long" },
+        { status: 400 },
+      );
+    }
+
+    const updated = await updateLinkPhotoCaption(id, photoId, caption);
+    if (!updated) {
+      return NextResponse.json(
+        { error: "Photo not found in this link" },
+        { status: 404 },
+      );
+    }
 
     return NextResponse.json({ success: true, caption });
   } catch (e) {

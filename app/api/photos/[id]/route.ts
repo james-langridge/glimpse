@@ -7,6 +7,8 @@ import {
 import { getActiveLinksForPhoto } from "@/src/db/links";
 import { deletePhotoFile } from "@/src/lib/storage";
 
+const MAX_CAPTION_LENGTH = 500;
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -23,6 +25,13 @@ export async function PATCH(
     const rawCaption = body.caption;
     const caption =
       typeof rawCaption === "string" ? rawCaption.trim() || null : null;
+
+    if (caption && caption.length > MAX_CAPTION_LENGTH) {
+      return NextResponse.json(
+        { error: "Caption too long" },
+        { status: 400 },
+      );
+    }
 
     await updatePhotoCaption(id, caption);
 

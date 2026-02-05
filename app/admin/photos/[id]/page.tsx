@@ -132,6 +132,9 @@ export default function PhotoDetailPage() {
         const data = await res.json();
         setPhoto({ ...photo, caption: data.caption });
         setEditingCaption(false);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? "Failed to save caption");
       }
     } finally {
       setSavingCaption(false);
@@ -156,6 +159,9 @@ export default function PhotoDetailPage() {
           ),
         });
         setEditingLinkCaption(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? "Failed to save caption");
       }
     } finally {
       setSavingLinkCaption(false);
@@ -179,6 +185,9 @@ export default function PhotoDetailPage() {
           ),
         });
         setEditingLinkCaption(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? "Failed to reset caption");
       }
     } finally {
       setSavingLinkCaption(false);

@@ -163,11 +163,12 @@ export async function updateLinkPhotoCaption(
   photoId: string,
   caption: string | null,
 ) {
-  await sql`
+  const result = await sql`
     UPDATE share_link_photos
     SET caption = ${caption}
     WHERE share_link_id = ${linkId} AND photo_id = ${photoId}
   `;
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function getLinkCounts() {
