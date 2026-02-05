@@ -66,6 +66,7 @@ interface RecentDownload {
   photo_id: string;
   filename: string;
   original_name: string | null;
+  email: string | null;
   country: string | null;
   city: string | null;
   device_type: string | null;
@@ -211,7 +212,7 @@ function compareRecent(
   }
 }
 
-type DownloadSortKey = "time" | "photo" | "location" | "device" | "browser";
+type DownloadSortKey = "time" | "email" | "photo" | "location" | "device" | "browser";
 
 function compareDownload(
   a: RecentDownload,
@@ -224,6 +225,8 @@ function compareDownload(
         new Date(a.downloaded_at).getTime() -
         new Date(b.downloaded_at).getTime()
       );
+    case "email":
+      return (a.email ?? "").localeCompare(b.email ?? "");
     case "photo":
       return (a.original_name ?? a.filename).localeCompare(
         b.original_name ?? b.filename,
@@ -253,6 +256,9 @@ function RecentDownloadCard({ download }: { download: RecentDownload }) {
           {formatDateTime(download.downloaded_at)}
         </span>
       </div>
+      {download.email && (
+        <p className="mt-2 truncate text-sm text-violet-400">{download.email}</p>
+      )}
       <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
         <div>
           <span className="text-zinc-500">Photo</span>
@@ -338,6 +344,7 @@ export default function LinkAnalytics({ linkId }: { linkId: string }) {
     "browser",
   ]);
   const downloadSort = useTableSort<DownloadSortKey>("time", "desc", [
+    "email",
     "photo",
     "location",
     "device",
@@ -818,6 +825,11 @@ export default function LinkAnalytics({ linkId }: { linkId: string }) {
                             align: "text-left",
                           },
                           {
+                            key: "email" as const,
+                            label: "Email",
+                            align: "text-left",
+                          },
+                          {
                             key: "photo" as const,
                             label: "Photo",
                             align: "text-left",
@@ -868,6 +880,9 @@ export default function LinkAnalytics({ linkId }: { linkId: string }) {
                       >
                         <td className="py-2 text-zinc-400">
                           {formatDateTime(dl.downloaded_at)}
+                        </td>
+                        <td className="max-w-[200px] truncate py-2 text-violet-400">
+                          {dl.email ?? "-"}
                         </td>
                         <td className="max-w-[200px] truncate py-2 text-zinc-300">
                           {dl.original_name ?? dl.filename}

@@ -90,6 +90,7 @@ export interface RecentDownload {
   photo_id: string;
   filename: string;
   original_name: string | null;
+  email: string | null;
   country: string | null;
   city: string | null;
   device_type: string | null;
@@ -113,7 +114,7 @@ export async function getDownloadsForLink(
   values.push(limit);
   const result = await query<RecentDownload>(
     `SELECT pd.id, pd.downloaded_at, pd.photo_id, p.filename, p.original_name,
-            pd.country, pd.city, pd.device_type, pd.browser, pd.os
+            pd.email, pd.country, pd.city, pd.device_type, pd.browser, pd.os
      FROM photo_downloads pd
      JOIN photos p ON p.id = pd.photo_id
      WHERE ${conditions.join(" AND ")}
