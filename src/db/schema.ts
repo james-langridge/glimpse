@@ -125,10 +125,6 @@ export async function initializeDatabase() {
   `);
 
   await query(`
-    CREATE INDEX IF NOT EXISTS idx_download_tokens_token ON download_tokens(token)
-  `);
-
-  await query(`
     ALTER TABLE photo_downloads ADD COLUMN IF NOT EXISTS email VARCHAR(255)
   `);
 

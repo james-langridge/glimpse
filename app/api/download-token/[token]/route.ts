@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getClientIP } from "@/src/lib/rate-limit";
 import { getDownloadToken } from "@/src/db/download-tokens";
-import { insertDownload } from "@/src/db/downloads";
 import { withTransaction } from "@/src/lib/db";
 import { readPhoto } from "@/src/lib/storage";
 import { embedWatermark } from "@/src/lib/watermark";

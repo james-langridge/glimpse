@@ -2,6 +2,7 @@ import { getPhotosForCleanup, deletePhoto } from "@/src/db/photos";
 import { setSetting } from "@/src/db/settings";
 import { getConfig } from "@/src/lib/config";
 import { deletePhotoFile } from "@/src/lib/storage";
+import { query } from "@/src/lib/db";
 
 interface CleanupResult {
   deleted: string[];
@@ -30,6 +31,14 @@ export async function runCleanup(): Promise<CleanupResult> {
         error: e instanceof Error ? e.message : String(e),
       });
     }
+  }
+
+  try {
+    await query(
+      `DELETE FROM download_tokens WHERE expires_at < NOW() - INTERVAL '7 days'`,
+    );
+  } catch (e) {
+    console.error("Failed to clean up expired download tokens:", e);
   }
 
   try {

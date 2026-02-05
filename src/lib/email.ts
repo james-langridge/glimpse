@@ -2,6 +2,14 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export async function sendDownloadEmail({
   to,
   downloadUrl,
@@ -14,7 +22,7 @@ export async function sendDownloadEmail({
   linkTitle: string | null;
 }) {
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
-  const context = linkTitle ? ` from "${linkTitle}"` : "";
+  const context = linkTitle ? ` from "${escapeHtml(linkTitle)}"` : "";
 
   await resend.emails.send({
     from,
@@ -24,7 +32,7 @@ export async function sendDownloadEmail({
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
         <h2 style="margin: 0 0 16px;">Your photo is ready</h2>
         <p style="color: #555; margin: 0 0 24px;">
-          Click below to download <strong>${photoName}</strong>${context}.
+          Click below to download <strong>${escapeHtml(photoName)}</strong>${context}.
         </p>
         <a href="${downloadUrl}"
            style="display: inline-block; background: #18181b; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">
