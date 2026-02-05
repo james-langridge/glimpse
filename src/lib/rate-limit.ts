@@ -24,7 +24,7 @@ function cleanup(): void {
   }
 }
 
-function isRateLimited(
+export function isRateLimited(
   key: string,
   maxRequests: number,
   windowMs: number,

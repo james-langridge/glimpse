@@ -10,10 +10,12 @@ export async function insertDownload(download: {
   device_type: string | null;
   browser: string | null;
   os: string | null;
+  email?: string | null;
+  download_token_id?: string | null;
 }): Promise<number> {
   const result = await sql<{ id: number }>`
-    INSERT INTO photo_downloads (share_link_id, photo_id, ip_hash, country, city, user_agent, device_type, browser, os)
-    VALUES (${download.share_link_id}, ${download.photo_id}, ${download.ip_hash}, ${download.country}, ${download.city}, ${download.user_agent}, ${download.device_type}, ${download.browser}, ${download.os})
+    INSERT INTO photo_downloads (share_link_id, photo_id, ip_hash, country, city, user_agent, device_type, browser, os, email, download_token_id)
+    VALUES (${download.share_link_id}, ${download.photo_id}, ${download.ip_hash}, ${download.country}, ${download.city}, ${download.user_agent}, ${download.device_type}, ${download.browser}, ${download.os}, ${download.email ?? null}, ${download.download_token_id ?? null})
     RETURNING id
   `;
   return result.rows[0].id;

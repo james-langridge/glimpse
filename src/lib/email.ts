@@ -1,0 +1,39 @@
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function sendDownloadEmail({
+  to,
+  downloadUrl,
+  photoName,
+  linkTitle,
+}: {
+  to: string;
+  downloadUrl: string;
+  photoName: string;
+  linkTitle: string | null;
+}) {
+  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  const context = linkTitle ? ` from "${linkTitle}"` : "";
+
+  await resend.emails.send({
+    from,
+    to,
+    subject: "Your download link",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <h2 style="margin: 0 0 16px;">Your photo is ready</h2>
+        <p style="color: #555; margin: 0 0 24px;">
+          Click below to download <strong>${photoName}</strong>${context}.
+        </p>
+        <a href="${downloadUrl}"
+           style="display: inline-block; background: #18181b; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">
+          Download photo
+        </a>
+        <p style="color: #888; font-size: 13px; margin: 24px 0 0;">
+          This link expires in 1 hour and can only be used once.
+        </p>
+      </div>
+    `,
+  });
+}

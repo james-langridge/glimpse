@@ -109,4 +109,30 @@ export async function initializeDatabase() {
   await query(`
     ALTER TABLE share_link_photos ADD COLUMN IF NOT EXISTS caption VARCHAR(500)
   `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS download_tokens (
+      id VARCHAR(8) PRIMARY KEY,
+      token VARCHAR(64) UNIQUE NOT NULL,
+      share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE CASCADE,
+      photo_id VARCHAR(8) REFERENCES photos(id) ON DELETE CASCADE,
+      email VARCHAR(255) NOT NULL,
+      ip_hash VARCHAR(64),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      expires_at TIMESTAMPTZ NOT NULL,
+      consumed_at TIMESTAMPTZ
+    )
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_download_tokens_token ON download_tokens(token)
+  `);
+
+  await query(`
+    ALTER TABLE photo_downloads ADD COLUMN IF NOT EXISTS email VARCHAR(255)
+  `);
+
+  await query(`
+    ALTER TABLE photo_downloads ADD COLUMN IF NOT EXISTS download_token_id VARCHAR(8)
+  `);
 }
