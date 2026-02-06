@@ -69,6 +69,24 @@ The admin panel lets you:
 
 One-click deploy to [Railway](https://railway.com) with a pre-configured app, PostgreSQL database, and persistent volume. Admin password and session secret are auto-generated — just click and go.
 
+### Vercel (free tier)
+
+Deploy to Vercel with a Neon PostgreSQL database and Vercel Blob for photo storage. Everything runs on Vercel's free tier.
+
+1. Fork or import this repo into Vercel
+2. Create a [Neon](https://neon.tech) PostgreSQL database and add `DATABASE_URL` to your Vercel environment variables
+3. In your Vercel project, go to **Storage** → **Create** → **Blob** to add a blob store (`BLOB_READ_WRITE_TOKEN` is auto-configured)
+4. Set these environment variables in your Vercel project settings:
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Neon PostgreSQL connection string |
+| `ADMIN_PASSWORD` | Your admin password |
+| `SESSION_SECRET` | Random string, 32+ characters |
+| `SITE_URL` | Your Vercel app URL (e.g. `https://glimpse.vercel.app`) |
+
+> **Note:** Vercel has a 4.5 MB request body limit on the free tier, so upload roughly one photo at a time. Photo cleanup on Vercel runs via a daily cron job (`/api/cleanup`) instead of the built-in scheduler.
+
 ### Docker Compose
 
 The quickest way to self-host Glimpse on your own machine. Docker Compose handles everything — the app, PostgreSQL, and persistent storage — in a single command. All you need is a machine with [Docker](https://docs.docker.com/get-docker/) installed.
@@ -113,12 +131,13 @@ docker compose up -d --build
 | `RESEND_API_KEY` | Resend API key for email-gated downloads | |
 | `EMAIL_FROM` | Sender address for download emails | `onboarding@resend.dev` |
 | `DISPLAY_TIMEZONE` | IANA timezone for displayed times | Server timezone |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token (uses Blob storage instead of filesystem) | |
 
 ### Manual Setup (without Docker)
 
 If you prefer to run Glimpse directly with Node.js, you'll need to provide your own PostgreSQL instance and manage the process yourself.
 
-**Prerequisites:** Node.js 18+, PostgreSQL 14+, a persistent filesystem path for photo storage.
+**Prerequisites:** Node.js 18+, PostgreSQL 14+, a persistent filesystem path for photo storage (or set `BLOB_READ_WRITE_TOKEN` to use Vercel Blob instead).
 
 Create a `.env.local` file:
 
@@ -145,7 +164,7 @@ The database tables are created automatically on first startup. The production s
 
 Glimpse automatically cleans up photos that are older than `CLEANUP_DAYS` days (default 30) and aren't part of any active share link. Set `CLEANUP_DAYS=0` to disable cleanup and store photos indefinitely.
 
-Cleanup runs automatically — 60 seconds after server startup, then every 24 hours. No configuration needed. The last cleanup time is shown on the admin photos page.
+For Docker and Railway deployments, cleanup runs automatically — 60 seconds after server startup, then every 24 hours. No configuration needed. On Vercel, cleanup runs via a daily cron job (`/api/cleanup`, secured by `CRON_SECRET`). The last cleanup time is shown on the admin photos page.
 
 ### Reverse Proxy (Nginx Example)
 
@@ -177,7 +196,7 @@ The `X-Forwarded-For` header is important -- Glimpse uses it for rate limiting a
 
 ## Technical Overview
 
-Glimpse is a full-stack Next.js application with a PostgreSQL database and filesystem-based photo storage.
+Glimpse is a full-stack Next.js application with a PostgreSQL database and filesystem or Vercel Blob photo storage.
 
 ### Tech Stack
 
@@ -210,7 +229,7 @@ src/
 - Database queries are isolated in `src/db/` with a `sql` tagged template for parameterized queries
 - Side effects (file I/O, auth) live in `src/lib/`
 - React Server Components handle data fetching; Client Components handle interactivity
-- Photos are stored on the filesystem, metadata in PostgreSQL
+- Photos are stored on the filesystem or Vercel Blob (selected by `BLOB_READ_WRITE_TOKEN`), metadata in PostgreSQL
 - The database schema auto-initializes on server startup via `instrumentation.ts`, which also schedules automatic photo cleanup
 
 ### Database Schema
@@ -239,6 +258,7 @@ All foreign keys use `ON DELETE CASCADE`.
 | POST | `/api/download-request` | Request a download token via email |
 | GET | `/api/download-token/[token]` | Validate and consume a download token |
 | POST | `/api/analytics/duration` | Record session duration (beacon) |
+| GET | `/api/cleanup` | Run photo cleanup (Vercel cron, requires `CRON_SECRET`) |
 
 **Admin (session required):**
 
