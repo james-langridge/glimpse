@@ -67,7 +67,7 @@ The admin panel lets you:
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/sp76ae?referralCode=0QW2XU&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
-Deploy Glimpse to [Railway](https://railway.com) with a pre-configured app, PostgreSQL database, and persistent volume. Set your admin password and session secret during setup — everything else is handled automatically.
+One-click deploy to [Railway](https://railway.com) with a pre-configured app, PostgreSQL database, and persistent volume. Admin password and session secret are auto-generated — just click and go.
 
 ### Docker Compose
 
