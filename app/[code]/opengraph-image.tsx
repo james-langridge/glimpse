@@ -6,10 +6,7 @@ export const contentType = "image/png";
 
 export default async function OGImage() {
   const fontData = await fetch(
-    new URL(
-      "../../node_modules/next/dist/next-devtools/server/font/geist-latin.woff2",
-      import.meta.url,
-    ),
+    "https://fonts.gstatic.com/s/geist/v4/gyBhhwUxId8gMGYQMKR3pzfaWI_RwuM4nQ.ttf",
   ).then((res) => res.arrayBuffer());
 
   return new ImageResponse(
