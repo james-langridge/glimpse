@@ -31,7 +31,6 @@ services:
       PHOTO_STORAGE_PATH: /data/photos
       SITE_URL: ${SITE_URL:-http://localhost:3000}
       CLEANUP_DAYS: ${CLEANUP_DAYS:-30}
-      CLEANUP_SECRET: ${CLEANUP_SECRET:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
       DISPLAY_TIMEZONE: ${DISPLAY_TIMEZONE:-}

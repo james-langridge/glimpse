@@ -110,7 +110,6 @@ docker compose up -d --build
 |----------|-------------|---------|
 | `SITE_URL` | Public URL for share links | `http://localhost:3000` |
 | `CLEANUP_DAYS` | Days before unlinked photos are deleted (0 to disable) | `30` |
-| `CLEANUP_SECRET` | Bearer token for external cleanup trigger | |
 | `RESEND_API_KEY` | Resend API key for email-gated downloads | |
 | `EMAIL_FROM` | Sender address for download emails | `onboarding@resend.dev` |
 | `DISPLAY_TIMEZONE` | IANA timezone for displayed times | Server timezone |
@@ -146,14 +145,7 @@ The database tables are created automatically on first startup. The production s
 
 Glimpse automatically cleans up photos that are older than `CLEANUP_DAYS` days (default 30) and aren't part of any active share link. Set `CLEANUP_DAYS=0` to disable cleanup and store photos indefinitely.
 
-**Built-in scheduler (default):** Cleanup runs automatically — 60 seconds after server startup, then every 24 hours. No configuration needed. The last cleanup time is shown on the admin photos page.
-
-**External trigger (optional):** You can also trigger cleanup manually or via cron using the API endpoint. This requires setting the `CLEANUP_SECRET` environment variable.
-
-```bash
-curl -sf -X POST https://photos.example.com/api/cleanup \
-  -H "Authorization: Bearer YOUR_CLEANUP_SECRET"
-```
+Cleanup runs automatically — 60 seconds after server startup, then every 24 hours. No configuration needed. The last cleanup time is shown on the admin photos page.
 
 ### Reverse Proxy (Nginx Example)
 
@@ -275,12 +267,6 @@ All foreign keys use `ON DELETE CASCADE`.
 | POST | `/api/links/bulk-revoke` | Bulk revoke links |
 | GET | `/api/analytics` | Fetch analytics data |
 | GET/PUT | `/api/settings` | Read/update admin settings |
-
-**System:**
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/api/cleanup` | Delete expired/unused photos (requires Bearer token) |
 
 ### Security
 
