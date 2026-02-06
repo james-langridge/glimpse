@@ -71,7 +71,7 @@ One-click deploy to [Railway](https://railway.com) with a pre-configured app, Po
 
 ### Docker Compose
 
-The quickest way to run Glimpse. Docker Compose handles everything — the app, PostgreSQL, and persistent storage — in a single command. All you need is a machine with [Docker](https://docs.docker.com/get-docker/) installed.
+The quickest way to self-host Glimpse on your own machine. Docker Compose handles everything — the app, PostgreSQL, and persistent storage — in a single command. All you need is a machine with [Docker](https://docs.docker.com/get-docker/) installed.
 
 ```bash
 git clone https://github.com/james-langridge/glimpse.git
