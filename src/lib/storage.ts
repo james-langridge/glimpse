@@ -1,39 +1,49 @@
-import { mkdir, writeFile, unlink, readFile, stat } from "fs/promises";
-import { join } from "path";
+interface StorageBackend {
+  ensureStorageDir(): Promise<void>;
+  savePhoto(filename: string, data: Buffer): Promise<void>;
+  deletePhotoFile(filename: string): Promise<void>;
+  readPhoto(filename: string): Promise<Buffer>;
+  statPhoto(filename: string): Promise<{ size: number; modified: Date }>;
+}
 
-const STORAGE_PATH = process.env.PHOTO_STORAGE_PATH ?? "/data/photos";
+const useBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 
-function photoPath(filename: string): string {
-  return join(STORAGE_PATH, filename);
+let _backend: StorageBackend | null = null;
+async function getBackend(): Promise<StorageBackend> {
+  if (!_backend) {
+    _backend = useBlob
+      ? await import("@/src/lib/storage-blob")
+      : await import("@/src/lib/storage-fs");
+  }
+  return _backend;
 }
 
 export async function ensureStorageDir(): Promise<void> {
-  await mkdir(STORAGE_PATH, { recursive: true });
+  const backend = await getBackend();
+  return backend.ensureStorageDir();
 }
 
 export async function savePhoto(
   filename: string,
   data: Buffer,
 ): Promise<void> {
-  await ensureStorageDir();
-  await writeFile(photoPath(filename), data);
+  const backend = await getBackend();
+  return backend.savePhoto(filename, data);
 }
 
 export async function deletePhotoFile(filename: string): Promise<void> {
-  try {
-    await unlink(photoPath(filename));
-  } catch (e: unknown) {
-    if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
-  }
+  const backend = await getBackend();
+  return backend.deletePhotoFile(filename);
 }
 
 export async function readPhoto(filename: string): Promise<Buffer> {
-  return readFile(photoPath(filename));
+  const backend = await getBackend();
+  return backend.readPhoto(filename);
 }
 
 export async function statPhoto(
   filename: string,
 ): Promise<{ size: number; modified: Date }> {
-  const s = await stat(photoPath(filename));
-  return { size: s.size, modified: s.mtime };
+  const backend = await getBackend();
+  return backend.statPhoto(filename);
 }
