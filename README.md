@@ -61,9 +61,131 @@ The admin panel lets you:
 
 ---
 
+## Getting Started
+
+### Railway (one-click)
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/VUgj10?referralCode=0QW2XU&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
+Deploy Glimpse to [Railway](https://railway.com) with a pre-configured app, PostgreSQL database, and persistent volume. Set your admin password and session secret during setup — everything else is handled automatically.
+
+### Docker Compose
+
+The quickest way to run Glimpse. Docker Compose handles everything — the app, PostgreSQL, and persistent storage — in a single command. All you need is a machine with [Docker](https://docs.docker.com/get-docker/) installed.
+
+```bash
+git clone https://github.com/james-langridge/glimpse.git
+cd glimpse
+
+# Copy the example env file
+cp .env.example .env
+```
+
+Edit `.env` and set these three values:
+
+```env
+ADMIN_PASSWORD=your-strong-password
+SESSION_SECRET=at-least-32-characters-of-random-text
+POSTGRES_PASSWORD=a-strong-database-password
+```
+
+Then start everything:
+
+```bash
+docker compose up -d
+```
+
+Glimpse will be available at `http://localhost:3000`. The database and photo storage use Docker named volumes, so your data persists across container restarts.
+
+To update after pulling new changes:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+**Optional settings** you can add to `.env`:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SITE_URL` | Public URL for share links | `http://localhost:3000` |
+| `CLEANUP_DAYS` | Days before unlinked photos are deleted (0 to disable) | `30` |
+| `CLEANUP_SECRET` | Bearer token for external cleanup trigger | |
+| `RESEND_API_KEY` | Resend API key for email-gated downloads | |
+| `EMAIL_FROM` | Sender address for download emails | `onboarding@resend.dev` |
+| `DISPLAY_TIMEZONE` | IANA timezone for displayed times | Server timezone |
+
+### Manual Setup (without Docker)
+
+If you prefer to run Glimpse directly with Node.js, you'll need to provide your own PostgreSQL instance and manage the process yourself.
+
+**Prerequisites:** Node.js 18+, PostgreSQL 14+, a persistent filesystem path for photo storage.
+
+Create a `.env.local` file:
+
+```env
+ADMIN_PASSWORD=your-strong-password
+SESSION_SECRET=at-least-32-characters-of-random-text
+DATABASE_URL=postgresql://user:password@localhost:5432/glimpse
+PHOTO_STORAGE_PATH=/data/photos
+SITE_URL=https://photos.example.com
+```
+
+```bash
+git clone https://github.com/james-langridge/glimpse.git
+cd glimpse
+npm install
+mkdir -p /data/photos
+npm run build
+npm start
+```
+
+The database tables are created automatically on first startup. The production server runs on port 3000 by default. Use a reverse proxy (Nginx, Caddy) to add HTTPS.
+
+### Photo Cleanup
+
+Glimpse automatically cleans up photos that are older than `CLEANUP_DAYS` days (default 30) and aren't part of any active share link. Set `CLEANUP_DAYS=0` to disable cleanup and store photos indefinitely.
+
+**Built-in scheduler (default):** Cleanup runs automatically — 60 seconds after server startup, then every 24 hours. No configuration needed. The last cleanup time is shown on the admin photos page.
+
+**External trigger (optional):** You can also trigger cleanup manually or via cron using the API endpoint. This requires setting the `CLEANUP_SECRET` environment variable.
+
+```bash
+curl -sf -X POST https://photos.example.com/api/cleanup \
+  -H "Authorization: Bearer YOUR_CLEANUP_SECRET"
+```
+
+### Reverse Proxy (Nginx Example)
+
+If you're running Glimpse behind a reverse proxy (common with both Docker Compose and manual setups), here's an Nginx example:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name photos.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/photos.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/photos.example.com/privkey.pem;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+The `X-Forwarded-For` header is important -- Glimpse uses it for rate limiting and analytics geolocation.
+
+---
+
 ## Technical Overview
 
-Glimpse is a full-stack Next.js application with a PostgreSQL database and filesystem-based photo storage. It is designed to be self-hosted.
+Glimpse is a full-stack Next.js application with a PostgreSQL database and filesystem-based photo storage.
 
 ### Tech Stack
 
@@ -180,122 +302,6 @@ On download, photos are watermarked with three layers of increasing robustness:
 3. **DCT frequency-domain** — 2D Discrete Cosine Transform on 120 random 8×8 luminance blocks, modifying a mid-frequency coefficient. Survives JPEG re-compression at quality 70+ and mild resizing.
 
 Extraction tries each layer in order (cheapest first) and returns the first successful match. All watermark logic is in `src/lib/watermark.ts` with no external dependencies beyond Sharp.
-
----
-
-## Self-Hosting
-
-### Docker Compose (recommended)
-
-The quickest way to run Glimpse. Docker Compose handles everything — the app, PostgreSQL, and persistent storage — in a single command. All you need is a machine with [Docker](https://docs.docker.com/get-docker/) installed.
-
-```bash
-git clone https://github.com/james-langridge/glimpse.git
-cd glimpse
-
-# Copy the example env file
-cp .env.example .env
-```
-
-Edit `.env` and set these three values:
-
-```env
-ADMIN_PASSWORD=your-strong-password
-SESSION_SECRET=at-least-32-characters-of-random-text
-POSTGRES_PASSWORD=a-strong-database-password
-```
-
-Then start everything:
-
-```bash
-docker compose up -d
-```
-
-Glimpse will be available at `http://localhost:3000`. The database and photo storage use Docker named volumes, so your data persists across container restarts.
-
-To update after pulling new changes:
-
-```bash
-git pull
-docker compose up -d --build
-```
-
-**Optional settings** you can add to `.env`:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SITE_URL` | Public URL for share links | `http://localhost:3000` |
-| `CLEANUP_DAYS` | Days before unlinked photos are deleted (0 to disable) | `30` |
-| `CLEANUP_SECRET` | Bearer token for external cleanup trigger | |
-| `RESEND_API_KEY` | Resend API key for email-gated downloads | |
-| `EMAIL_FROM` | Sender address for download emails | `onboarding@resend.dev` |
-| `DISPLAY_TIMEZONE` | IANA timezone for displayed times | Server timezone |
-
-### Manual Setup (without Docker)
-
-If you prefer to run Glimpse directly with Node.js, you'll need to provide your own PostgreSQL instance and manage the process yourself.
-
-**Prerequisites:** Node.js 18+, PostgreSQL 14+, a persistent filesystem path for photo storage.
-
-Create a `.env.local` file:
-
-```env
-ADMIN_PASSWORD=your-strong-password
-SESSION_SECRET=at-least-32-characters-of-random-text
-DATABASE_URL=postgresql://user:password@localhost:5432/glimpse
-PHOTO_STORAGE_PATH=/data/photos
-SITE_URL=https://photos.example.com
-```
-
-```bash
-git clone https://github.com/james-langridge/glimpse.git
-cd glimpse
-npm install
-mkdir -p /data/photos
-npm run build
-npm start
-```
-
-The database tables are created automatically on first startup. The production server runs on port 3000 by default. Use a reverse proxy (Nginx, Caddy) to add HTTPS.
-
-### Photo Cleanup
-
-Glimpse automatically cleans up photos that are older than `CLEANUP_DAYS` days (default 30) and aren't part of any active share link. Set `CLEANUP_DAYS=0` to disable cleanup and store photos indefinitely.
-
-**Built-in scheduler (default):** Cleanup runs automatically — 60 seconds after server startup, then every 24 hours. No configuration needed. The last cleanup time is shown on the admin photos page.
-
-**External trigger (optional):** You can also trigger cleanup manually or via cron using the API endpoint. This requires setting the `CLEANUP_SECRET` environment variable.
-
-```bash
-curl -sf -X POST https://photos.example.com/api/cleanup \
-  -H "Authorization: Bearer YOUR_CLEANUP_SECRET"
-```
-
-### Reverse Proxy (Nginx Example)
-
-If you're running Glimpse behind a reverse proxy (common with both Docker Compose and manual setups), here's an Nginx example:
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name photos.example.com;
-
-    ssl_certificate     /etc/letsencrypt/live/photos.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/photos.example.com/privkey.pem;
-
-    client_max_body_size 50M;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-The `X-Forwarded-For` header is important -- Glimpse uses it for rate limiting and analytics geolocation.
 
 ---
 
