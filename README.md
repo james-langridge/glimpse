@@ -65,7 +65,7 @@ The admin panel lets you:
 
 ### Railway (one-click)
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/VUgj10?referralCode=0QW2XU&utm_medium=integration&utm_source=template&utm_campaign=generic)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/sp76ae?referralCode=0QW2XU&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
 Deploy Glimpse to [Railway](https://railway.com) with a pre-configured app, PostgreSQL database, and persistent volume. Set your admin password and session secret during setup — everything else is handled automatically.
 
