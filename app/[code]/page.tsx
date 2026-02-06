@@ -32,11 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const photos = await getPhotosForCode(upperCode);
   if (photos.length === 0) return {};
 
-  const [siteUrl, displayTimezone] = await Promise.all([
-    getConfig("SITE_URL"),
-    getConfig("DISPLAY_TIMEZONE"),
-  ]);
-  const imageUrl = `${siteUrl}/og-image.jpg`;
+  const displayTimezone = await getConfig("DISPLAY_TIMEZONE");
   const photoCount = photos.length;
   const title =
     link.title || (photoCount === 1 ? "1 photo" : `${photoCount} photos`);
@@ -49,13 +45,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      images: [{ url: imageUrl, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [imageUrl],
     },
   };
 }
