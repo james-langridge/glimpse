@@ -112,20 +112,17 @@ export default async function SharePage({ params, searchParams }: Props) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-4 text-center">
-          <h1 className="text-2xl font-light tracking-widest text-white">
+          <a
+            href="/"
+            className="text-2xl font-light tracking-widest text-white transition-colors hover:text-zinc-300"
+          >
             GLIMPSE
-          </h1>
+          </a>
           <p className="text-zinc-400">
             {status === "expired"
               ? "This link has expired"
               : "This link is no longer available"}
           </p>
-          <a
-            href="/"
-            className="mt-4 text-sm text-zinc-500 transition hover:text-zinc-300"
-          >
-            Enter a different code
-          </a>
         </div>
       </div>
     );
@@ -147,9 +144,12 @@ export default async function SharePage({ params, searchParams }: Props) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-4 text-center">
-          <h1 className="text-2xl font-light tracking-widest text-white">
+          <a
+            href="/"
+            className="text-2xl font-light tracking-widest text-white transition-colors hover:text-zinc-300"
+          >
             GLIMPSE
-          </h1>
+          </a>
           <p className="text-zinc-400">No photos found</p>
         </div>
       </div>
@@ -163,8 +163,16 @@ export default async function SharePage({ params, searchParams }: Props) {
           Preview mode — analytics are not being recorded
         </div>
       )}
+      <div className="px-4 pt-8 text-center">
+        <a
+          href="/"
+          className="text-2xl font-light tracking-widest text-white transition-colors hover:text-zinc-300"
+        >
+          GLIMPSE
+        </a>
+      </div>
       {link.title && (
-        <h1 className="px-4 pt-8 text-center text-2xl font-light tracking-widest text-white">
+        <h1 className="px-4 pt-4 text-center text-2xl font-light tracking-widest text-white">
           {link.title}
         </h1>
       )}
