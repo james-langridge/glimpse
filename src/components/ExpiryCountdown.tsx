@@ -29,17 +29,32 @@ function formatTimeLeft(ms: number): string {
 
 export default function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
   const [timeLeft, setTimeLeft] = useState<string>("");
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
     function update() {
       const ms = new Date(expiresAt).getTime() - Date.now();
-      setTimeLeft(ms > 0 ? formatTimeLeft(ms) : "");
+      if (ms > 0) {
+        setTimeLeft(formatTimeLeft(ms));
+        setExpired(false);
+      } else {
+        setTimeLeft("");
+        setExpired(true);
+      }
     }
 
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [expiresAt]);
+
+  if (expired) {
+    return (
+      <p className="px-4 pt-2 text-center text-sm text-zinc-500">
+        This link has expired
+      </p>
+    );
+  }
 
   if (!timeLeft) return null;
 

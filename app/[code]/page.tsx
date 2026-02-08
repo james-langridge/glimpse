@@ -108,7 +108,7 @@ export default async function SharePage({ params, searchParams }: Props) {
         <div className="flex flex-col items-center gap-4 text-center">
           <a
             href="/"
-            className="text-2xl font-light tracking-widest text-white transition-colors hover:text-zinc-300"
+            className="text-sm font-medium tracking-[0.3em] text-zinc-400 transition-colors hover:text-zinc-300"
           >
             GLIMPSE
           </a>
@@ -116,6 +116,9 @@ export default async function SharePage({ params, searchParams }: Props) {
             {status === "expired"
               ? "This link has expired"
               : "This link is no longer available"}
+          </p>
+          <p className="text-sm text-zinc-500">
+            Contact the person who shared this link to request a new one.
           </p>
         </div>
       </div>
@@ -140,7 +143,7 @@ export default async function SharePage({ params, searchParams }: Props) {
         <div className="flex flex-col items-center gap-4 text-center">
           <a
             href="/"
-            className="text-2xl font-light tracking-widest text-white transition-colors hover:text-zinc-300"
+            className="text-sm font-medium tracking-[0.3em] text-zinc-400 transition-colors hover:text-zinc-300"
           >
             GLIMPSE
           </a>
@@ -160,7 +163,7 @@ export default async function SharePage({ params, searchParams }: Props) {
       <div className="px-4 pt-8 text-center">
         <a
           href="/"
-          className="text-2xl font-light tracking-widest text-white transition-colors hover:text-zinc-300"
+          className="text-sm font-medium tracking-[0.3em] text-zinc-400 transition-colors hover:text-zinc-300"
         >
           GLIMPSE
         </a>
@@ -171,6 +174,11 @@ export default async function SharePage({ params, searchParams }: Props) {
         </h1>
       )}
       <ExpiryCountdown expiresAt={new Date(link.expires_at).toISOString()} />
+      {photos.length > 1 && (
+        <p className="px-4 pt-2 text-center text-sm text-zinc-500">
+          {photos.length} photos
+        </p>
+      )}
       <ShareGallery photos={photos} code={upperCode} allowDownloads={link.allow_downloads} />
       <Footer />
       {viewId !== null && <DurationTracker viewId={viewId} />}
