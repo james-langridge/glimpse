@@ -34,7 +34,7 @@ export async function sendDownloadEmail({
   await getResend().emails.send({
     from,
     to,
-    subject: "Your download link",
+    subject: `Your photo: ${photoName}`,
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
         <h2 style="margin: 0 0 16px;">Your photo is ready</h2>
@@ -46,7 +46,13 @@ export async function sendDownloadEmail({
           Download photo
         </a>
         <p style="color: #888; font-size: 13px; margin: 24px 0 0;">
+          Or copy and paste this link: <a href="${downloadUrl}" style="color: #888;">${downloadUrl}</a>
+        </p>
+        <p style="color: #888; font-size: 13px; margin: 12px 0 0;">
           This link expires in 1 hour and can only be used once.
+        </p>
+        <p style="color: #888; font-size: 13px; margin: 8px 0 0;">
+          This photo has been personalized with a digital watermark linked to your download.
         </p>
       </div>
     `,
