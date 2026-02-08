@@ -93,7 +93,8 @@ export default function EmailDownloadModal({
             <p className="text-sm text-zinc-400">
               We sent a download link to{" "}
               <span className="text-zinc-200">{email.trim()}</span>. It expires
-              in 1 hour and can only be used once.
+              in 1 hour and can only be used once. If you don&apos;t see it,
+              check your spam folder.
             </p>
             <button
               onClick={onClose}
@@ -124,7 +125,8 @@ export default function EmailDownloadModal({
               disabled={loading}
             />
             <p className="mb-4 text-xs text-zinc-400">
-              Your email is recorded with this download.
+              We&apos;ll send a one-time download link to this address. Your
+              email is only used for this download.
             </p>
 
             {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
