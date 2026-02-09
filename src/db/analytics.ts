@@ -45,7 +45,7 @@ export async function getViewsForLink(linkId: string, days?: number) {
   const values: (string | number)[] = [linkId];
   if (days) {
     values.push(days);
-    conditions.push(`viewed_at >= NOW() - $${values.length} * INTERVAL '1 day'`);
+    conditions.push(`viewed_at >= datetime('now', '-' || $${values.length} || ' days')`);
   }
   const result = await query<LinkView>(
     `SELECT * FROM link_views WHERE ${conditions.join(" AND ")} ORDER BY viewed_at DESC`,
@@ -55,7 +55,7 @@ export async function getViewsForLink(linkId: string, days?: number) {
 }
 
 function buildAnalyticsFilter(days: number, linkId?: string) {
-  const conditions = [`viewed_at >= NOW() - $1 * INTERVAL '1 day'`];
+  const conditions = [`viewed_at >= datetime('now', '-' || $1 || ' days')`];
   const values: (string | number)[] = [days];
   if (linkId) {
     values.push(linkId);
@@ -143,7 +143,7 @@ export async function getRecentViews(
   const values: (string | number)[] = [];
   if (days) {
     values.push(days);
-    conditions.push(`lv.viewed_at >= NOW() - $${values.length} * INTERVAL '1 day'`);
+    conditions.push(`lv.viewed_at >= datetime('now', '-' || $${values.length} || ' days')`);
   }
   if (linkId) {
     values.push(linkId);
@@ -165,7 +165,7 @@ export async function getRecentViews(
 
 function buildPhotoAnalyticsFilter(photoId: string, days: number) {
   const values: (string | number)[] = [photoId, days];
-  const where = `slp.photo_id = $1 AND lv.viewed_at >= NOW() - $2 * INTERVAL '1 day'`;
+  const where = `slp.photo_id = $1 AND lv.viewed_at >= datetime('now', '-' || $2 || ' days')`;
   const from = `link_views lv JOIN share_link_photos slp ON lv.share_link_id = slp.share_link_id`;
   return { from, where, values };
 }
@@ -261,7 +261,7 @@ export async function getRecentViewsForPhoto(
   const values: (string | number)[] = [photoId];
   if (days) {
     values.push(days);
-    conditions.push(`lv.viewed_at >= NOW() - $${values.length} * INTERVAL '1 day'`);
+    conditions.push(`lv.viewed_at >= datetime('now', '-' || $${values.length} || ' days')`);
   }
   values.push(limit);
   const where = conditions.join(" AND ");
@@ -294,7 +294,7 @@ export async function getPerLinkStats(days: number = 30) {
       COUNT(DISTINCT lv.ip_hash) as unique_visitors
      FROM share_links sl
      LEFT JOIN link_views lv ON lv.share_link_id = sl.id
-       AND lv.viewed_at >= NOW() - $1 * INTERVAL '1 day'
+       AND lv.viewed_at >= datetime('now', '-' || $1 || ' days')
      GROUP BY sl.id, sl.code, sl.title, sl.revoked, sl.expires_at
      ORDER BY sl.created_at DESC`,
     [days],

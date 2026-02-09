@@ -61,21 +61,21 @@ export async function updateLink(
   if (updates.expires_at) {
     await sql`
       UPDATE share_links
-      SET expires_at = ${updates.expires_at.toISOString()}, updated_at = NOW()
+      SET expires_at = ${updates.expires_at.toISOString()}, updated_at = datetime('now')
       WHERE id = ${id}
     `;
   }
   if (updates.title !== undefined) {
     await sql`
       UPDATE share_links
-      SET title = ${updates.title}, updated_at = NOW()
+      SET title = ${updates.title}, updated_at = datetime('now')
       WHERE id = ${id}
     `;
   }
   if (updates.allow_downloads !== undefined) {
     await sql`
       UPDATE share_links
-      SET allow_downloads = ${updates.allow_downloads}, updated_at = NOW()
+      SET allow_downloads = ${updates.allow_downloads}, updated_at = datetime('now')
       WHERE id = ${id}
     `;
   }
@@ -84,7 +84,7 @@ export async function updateLink(
 export async function revokeLink(id: string) {
   await sql`
     UPDATE share_links
-    SET revoked = TRUE, revoked_at = NOW(), updated_at = NOW()
+    SET revoked = 1, revoked_at = datetime('now'), updated_at = datetime('now')
     WHERE id = ${id}
   `;
 }
@@ -175,8 +175,8 @@ export async function getLinkCounts() {
   const result = await query<{ status: string; count: string }>(`
     SELECT
       CASE
-        WHEN revoked = TRUE THEN 'revoked'
-        WHEN expires_at < NOW() THEN 'expired'
+        WHEN revoked = 1 THEN 'revoked'
+        WHEN expires_at < datetime('now') THEN 'expired'
         ELSE 'active'
       END as status,
       COUNT(*) as count
@@ -195,8 +195,8 @@ export async function getActiveLinksForPhoto(photoId: string) {
     SELECT sl.* FROM share_links sl
     JOIN share_link_photos slp ON slp.share_link_id = sl.id
     WHERE slp.photo_id = ${photoId}
-    AND sl.revoked = FALSE
-    AND sl.expires_at > NOW()
+    AND sl.revoked = 0
+    AND sl.expires_at > datetime('now')
   `;
   return result.rows;
 }

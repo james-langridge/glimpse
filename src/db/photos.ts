@@ -75,13 +75,13 @@ export async function getPhotosForCleanup() {
   if (days <= 0 || isNaN(days)) return [];
   const result = await sql<Photo>`
     SELECT p.* FROM photos p
-    WHERE p.uploaded_at <= NOW() - MAKE_INTERVAL(days => ${days})
+    WHERE p.uploaded_at <= datetime('now', '-' || ${days} || ' days')
     AND NOT EXISTS (
       SELECT 1 FROM share_link_photos slp
       JOIN share_links sl ON sl.id = slp.share_link_id
       WHERE slp.photo_id = p.id
-      AND sl.revoked = FALSE
-      AND sl.expires_at > NOW()
+      AND sl.revoked = 0
+      AND sl.expires_at > datetime('now')
     )
   `;
   return result.rows;
@@ -102,9 +102,9 @@ export async function getAllPhotosWithStats() {
     }
   >`
     SELECT p.*,
-      COUNT(DISTINCT lv.id)::text AS view_count,
-      COUNT(DISTINCT slp.share_link_id)::text AS link_count,
-      COUNT(DISTINCT CASE WHEN sl.revoked = FALSE AND sl.expires_at > NOW() THEN slp.share_link_id END)::text AS active_link_count
+      COUNT(DISTINCT lv.id) AS view_count,
+      COUNT(DISTINCT slp.share_link_id) AS link_count,
+      COUNT(DISTINCT CASE WHEN sl.revoked = 0 AND sl.expires_at > datetime('now') THEN slp.share_link_id END) AS active_link_count
     FROM photos p
     LEFT JOIN share_link_photos slp ON slp.photo_id = p.id
     LEFT JOIN share_links sl ON sl.id = slp.share_link_id
@@ -142,8 +142,8 @@ export async function getLinksForPhoto(photoId: string) {
 export async function getViewCountForPhoto(photoId: string) {
   const result = await sql<{ total_views: string; unique_visitors: string }>`
     SELECT
-      COUNT(lv.id)::text AS total_views,
-      COUNT(DISTINCT lv.ip_hash)::text AS unique_visitors
+      COUNT(lv.id) AS total_views,
+      COUNT(DISTINCT lv.ip_hash) AS unique_visitors
     FROM link_views lv
     JOIN share_link_photos slp ON slp.share_link_id = lv.share_link_id
     WHERE slp.photo_id = ${photoId}
