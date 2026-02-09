@@ -1,31 +1,13 @@
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: glimpse
-      POSTGRES_USER: glimpse
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U glimpse"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   app:
     build:
       context: .
       dockerfile: Dockerfile.compose
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://glimpse:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/glimpse
+      DATABASE_PATH: /data/glimpse.db
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
       PHOTO_STORAGE_PATH: /data/photos
@@ -35,7 +17,7 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-}
       DISPLAY_TIMEZONE: ${DISPLAY_TIMEZONE:-}
     volumes:
-      - photo_storage:/data/photos
+      - app_data:/data
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
       interval: 10s
@@ -44,5 +26,4 @@ services:
       start_period: 15s
 
 volumes:
-  postgres_data:
-  photo_storage:
+  app_data:

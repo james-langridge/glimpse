@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  serverExternalPackages: ["geoip-lite"],
+  serverExternalPackages: ["geoip-lite", "better-sqlite3"],
   async headers() {
     return [
       {

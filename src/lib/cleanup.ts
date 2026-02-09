@@ -35,7 +35,7 @@ export async function runCleanup(): Promise<CleanupResult> {
 
   try {
     await query(
-      `DELETE FROM download_tokens WHERE expires_at < NOW() - INTERVAL '7 days'`,
+      `DELETE FROM download_tokens WHERE expires_at < datetime('now', '-7 days')`,
     );
   } catch (e) {
     console.error("Failed to clean up expired download tokens:", e);

@@ -64,7 +64,7 @@ export async function getDownloadCountForLink(
   if (days) {
     values.push(days);
     conditions.push(
-      `downloaded_at >= NOW() - $${values.length} * INTERVAL '1 day'`,
+      `downloaded_at >= datetime('now', '-' || $${values.length} || ' days')`,
     );
   }
   const result = await query<{
@@ -109,7 +109,7 @@ export async function getDownloadsForLink(
   if (days) {
     values.push(days);
     conditions.push(
-      `pd.downloaded_at >= NOW() - $${values.length} * INTERVAL '1 day'`,
+      `pd.downloaded_at >= datetime('now', '-' || $${values.length} || ' days')`,
     );
   }
   values.push(limit);
@@ -145,7 +145,7 @@ export async function getDownloadCountForPhoto(photoId: string, days?: number) {
   if (days) {
     values.push(days);
     conditions.push(
-      `downloaded_at >= NOW() - $${values.length} * INTERVAL '1 day'`,
+      `downloaded_at >= datetime('now', '-' || $${values.length} || ' days')`,
     );
   }
   const result = await query<{
@@ -176,7 +176,7 @@ export async function getDownloadsForPhoto(
   if (days) {
     values.push(days);
     conditions.push(
-      `pd.downloaded_at >= NOW() - $${values.length} * INTERVAL '1 day'`,
+      `pd.downloaded_at >= datetime('now', '-' || $${values.length} || ' days')`,
     );
   }
   values.push(limit);

@@ -85,7 +85,7 @@ export async function GET(
       try {
         downloadId = await withTransaction(async (client) => {
           const consumed = await client.query(
-            "UPDATE download_tokens SET consumed_at = NOW() WHERE token = $1 AND consumed_at IS NULL RETURNING id",
+            "UPDATE download_tokens SET consumed_at = datetime('now') WHERE token = $1 AND consumed_at IS NULL RETURNING id",
             [token],
           );
 

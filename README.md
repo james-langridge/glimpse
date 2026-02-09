@@ -67,29 +67,11 @@ The admin panel lets you:
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/glimpse?referralCode=0QW2XU&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
-One-click deploy to [Railway](https://railway.com) with a pre-configured app, PostgreSQL database, and persistent volume. Admin password and session secret are auto-generated — just click and go.
-
-### Vercel (free tier)
-
-Deploy to Vercel with a Neon PostgreSQL database and Vercel Blob for photo storage. Everything runs on Vercel's free tier.
-
-1. Fork or import this repo into Vercel
-2. Create a [Neon](https://neon.tech) PostgreSQL database and add `DATABASE_URL` to your Vercel environment variables
-3. In your Vercel project, go to **Storage** → **Create** → **Blob** to add a blob store (`BLOB_READ_WRITE_TOKEN` is auto-configured)
-4. Set these environment variables in your Vercel project settings:
-
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | Neon PostgreSQL connection string |
-| `ADMIN_PASSWORD` | Your admin password |
-| `SESSION_SECRET` | Random string, 32+ characters |
-| `SITE_URL` | Your Vercel app URL (e.g. `https://glimpse.vercel.app`) |
-
-> **Note:** Vercel has a 4.5 MB request body limit on the free tier, so upload roughly one photo at a time. Photo cleanup on Vercel runs via a daily cron job (`/api/cleanup`) instead of the built-in scheduler.
+One-click deploy to [Railway](https://railway.com) with a pre-configured app and persistent volume. Admin password and session secret are auto-generated — just click and go.
 
 ### Docker Compose
 
-The quickest way to self-host Glimpse on your own machine. Docker Compose handles everything — the app, PostgreSQL, and persistent storage — in a single command. All you need is a machine with [Docker](https://docs.docker.com/get-docker/) installed.
+The quickest way to self-host Glimpse on your own machine. Docker Compose handles everything — the app, SQLite database, and persistent storage — in a single command. All you need is a machine with [Docker](https://docs.docker.com/get-docker/) installed.
 
 ```bash
 git clone https://github.com/james-langridge/glimpse.git
@@ -99,12 +81,11 @@ cd glimpse
 cp .env.example .env
 ```
 
-Edit `.env` and set these three values:
+Edit `.env` and set these two values:
 
 ```env
 ADMIN_PASSWORD=your-strong-password
 SESSION_SECRET=at-least-32-characters-of-random-text
-POSTGRES_PASSWORD=a-strong-database-password
 ```
 
 Then start everything:
@@ -113,7 +94,7 @@ Then start everything:
 docker compose up -d
 ```
 
-Glimpse will be available at `http://localhost:3000`. The database and photo storage use Docker named volumes, so your data persists across container restarts.
+Glimpse will be available at `http://localhost:3000`. The database and photo storage use a Docker named volume, so your data persists across container restarts.
 
 To update after pulling new changes:
 
@@ -135,16 +116,16 @@ docker compose up -d --build
 
 ### Manual Setup (without Docker)
 
-If you prefer to run Glimpse directly with Node.js, you'll need to provide your own PostgreSQL instance and manage the process yourself.
+If you prefer to run Glimpse directly with Node.js.
 
-**Prerequisites:** Node.js 18+, PostgreSQL 14+, a persistent filesystem path for photo storage (or set `BLOB_READ_WRITE_TOKEN` to use Vercel Blob instead).
+**Prerequisites:** Node.js 18+, a persistent filesystem path for photo storage (or set `BLOB_READ_WRITE_TOKEN` to use Vercel Blob instead).
 
 Create a `.env.local` file:
 
 ```env
 ADMIN_PASSWORD=your-strong-password
 SESSION_SECRET=at-least-32-characters-of-random-text
-DATABASE_URL=postgresql://user:password@localhost:5432/glimpse
+DATABASE_PATH=./data/glimpse.db
 PHOTO_STORAGE_PATH=/data/photos
 SITE_URL=https://photos.example.com
 ```
@@ -158,7 +139,7 @@ npm run build
 npm start
 ```
 
-The database tables are created automatically on first startup. The production server runs on port 3000 by default. Use a reverse proxy (Nginx, Caddy) to add HTTPS.
+The SQLite database and tables are created automatically on first startup. The production server runs on port 3000 by default. Use a reverse proxy (Nginx, Caddy) to add HTTPS.
 
 ### Photo Cleanup
 
@@ -196,7 +177,7 @@ The `X-Forwarded-For` header is important -- Glimpse uses it for rate limiting a
 
 ## Technical Overview
 
-Glimpse is a full-stack Next.js application with a PostgreSQL database and filesystem or Vercel Blob photo storage.
+Glimpse is a full-stack Next.js application with a SQLite database and filesystem or Vercel Blob photo storage.
 
 ### Tech Stack
 
@@ -205,7 +186,7 @@ Glimpse is a full-stack Next.js application with a PostgreSQL database and files
 | Framework | Next.js 16 (App Router) |
 | Language | TypeScript |
 | UI | React 19, Tailwind CSS 4 |
-| Database | PostgreSQL |
+| Database | SQLite (better-sqlite3) |
 | Auth | iron-session (encrypted cookies) |
 | Image Processing | Sharp |
 | Analytics | geoip-lite, ua-parser-js, Recharts |
@@ -229,7 +210,7 @@ src/
 - Database queries are isolated in `src/db/` with a `sql` tagged template for parameterized queries
 - Side effects (file I/O, auth) live in `src/lib/`
 - React Server Components handle data fetching; Client Components handle interactivity
-- Photos are stored on the filesystem or Vercel Blob (selected by `BLOB_READ_WRITE_TOKEN`), metadata in PostgreSQL
+- Photos are stored on the filesystem or Vercel Blob (selected by `BLOB_READ_WRITE_TOKEN`), metadata in SQLite
 - The database schema auto-initializes on server startup via `instrumentation.ts`, which also schedules automatic photo cleanup
 
 ### Database Schema
@@ -244,7 +225,7 @@ Seven tables:
 - **photo_downloads** -- download analytics with optional email and token linkage
 - **download_tokens** -- email-gated download tokens with expiry and consumption tracking
 
-All foreign keys use `ON DELETE CASCADE`.
+Foreign keys use `ON DELETE CASCADE` (except `photo_downloads` which uses `ON DELETE SET NULL` for traceability).
 
 ### API Endpoints
 

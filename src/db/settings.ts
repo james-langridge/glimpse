@@ -21,8 +21,8 @@ export async function getAllSettings(): Promise<Record<string, string>> {
 export async function setSetting(key: string, value: string): Promise<void> {
   await sql`
     INSERT INTO settings (key, value, updated_at)
-    VALUES (${key}, ${value}, NOW())
-    ON CONFLICT (key) DO UPDATE SET value = ${value}, updated_at = NOW()
+    VALUES (${key}, ${value}, datetime('now'))
+    ON CONFLICT (key) DO UPDATE SET value = ${value}, updated_at = datetime('now')
   `;
 }
 
