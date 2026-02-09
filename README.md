@@ -141,11 +141,13 @@ npm start
 
 The SQLite database and tables are created automatically on first startup. The production server runs on port 3000 by default. Use a reverse proxy (Nginx, Caddy) to add HTTPS.
 
+> **Note:** Vercel's serverless functions use an ephemeral filesystem, so SQLite databases don't persist between invocations. Vercel deployment is no longer supported. Use Docker Compose, Railway, or a manual setup with a persistent filesystem instead.
+
 ### Photo Cleanup
 
 Glimpse automatically cleans up photos that are older than `CLEANUP_DAYS` days (default 30) and aren't part of any active share link. Set `CLEANUP_DAYS=0` to disable cleanup and store photos indefinitely.
 
-For Docker and Railway deployments, cleanup runs automatically — 60 seconds after server startup, then every 24 hours. No configuration needed. On Vercel, cleanup runs via a daily cron job (`/api/cleanup`, secured by `CRON_SECRET`). The last cleanup time is shown on the admin photos page.
+For Docker and Railway deployments, cleanup runs automatically — 60 seconds after server startup, then every 24 hours. No configuration needed. The last cleanup time is shown on the admin photos page.
 
 ### Reverse Proxy (Nginx Example)
 
@@ -319,6 +321,10 @@ npm run build
 2. Add query functions in a new or existing `src/db/*.ts` file
 3. Add API routes under `app/api/`
 4. Add UI components in `src/components/` and pages in `app/`
+
+## Migrating from PostgreSQL
+
+If you have an existing Glimpse deployment using PostgreSQL (v0.6.0 and earlier), this version is a breaking change — the database backend has been replaced with SQLite. There is no automatic migration. To preserve your data, export it from PostgreSQL and re-import into the new SQLite database manually. The schema is the same, only the SQL dialect differs.
 
 ## License
 

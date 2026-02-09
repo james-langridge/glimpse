@@ -44,6 +44,27 @@ function normalizeBooleans(values: Primitive[]): Primitive[] {
   });
 }
 
+// SQLite stores booleans as INTEGER 0/1. Convert back to JS booleans
+// for columns where the TypeScript interfaces expect boolean values.
+const BOOLEAN_COLUMNS = new Set([
+  "revoked",
+  "allow_downloads",
+  "link_revoked",
+]);
+
+function coerceBooleans<T>(rows: Record<string, unknown>[]): T[] {
+  return rows.map((row) => {
+    const out: Record<string, unknown> = {};
+    for (const key in row) {
+      out[key] =
+        BOOLEAN_COLUMNS.has(key) && typeof row[key] === "number"
+          ? row[key] !== 0
+          : row[key];
+    }
+    return out as T;
+  });
+}
+
 function execQuery<T>(
   target: Database.Database,
   queryString: string,
@@ -54,7 +75,8 @@ function execQuery<T>(
 
   if (isSelect(sqlStr) || hasReturning(sqlStr)) {
     const stmt = target.prepare(sqlStr);
-    const rows = stmt.all(...params) as T[];
+    const raw = stmt.all(...params) as Record<string, unknown>[];
+    const rows = coerceBooleans<T>(raw);
     return { rows, rowCount: rows.length };
   }
 
@@ -88,6 +110,9 @@ export interface TransactionClient {
   ) => Promise<QueryResult<T>>;
 }
 
+// All operations share a single synchronous SQLite connection. The callback
+// is async for API compatibility, but avoid real async work (network, file I/O)
+// between queries — other callers on the same connection could see uncommitted state.
 export async function withTransaction<T>(
   fn: (client: TransactionClient) => Promise<T>,
 ): Promise<T> {
