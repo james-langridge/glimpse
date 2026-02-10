@@ -132,8 +132,14 @@ export async function initializeDatabase() {
     ALTER TABLE photo_downloads ADD COLUMN IF NOT EXISTS download_token_id VARCHAR(8)
   `);
 
-  // Migrate existing CASCADE constraints to SET NULL so download records
-  // survive photo/link deletion — needed for watermark traceability.
+  // Migrate CASCADE to SET NULL so analytics and download records
+  // survive link/photo deletion.
+  await query(`
+    ALTER TABLE link_views
+      DROP CONSTRAINT IF EXISTS link_views_share_link_id_fkey,
+      ADD CONSTRAINT link_views_share_link_id_fkey
+        FOREIGN KEY (share_link_id) REFERENCES share_links(id) ON DELETE SET NULL
+  `);
   await query(`
     ALTER TABLE photo_downloads
       DROP CONSTRAINT IF EXISTS photo_downloads_share_link_id_fkey,
