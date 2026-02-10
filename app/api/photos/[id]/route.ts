@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getPhotoById,
-  deletePhoto,
-  updatePhotoCaption,
-} from "@/src/db/photos";
+import { getPhotoById, updatePhotoCaption } from "@/src/db/photos";
 import { getActiveLinksForPhoto } from "@/src/db/links";
-import { deletePhotoFile } from "@/src/lib/storage";
+import { safeDeletePhoto } from "@/src/lib/cleanup";
 
 const MAX_CAPTION_LENGTH = 500;
 
@@ -67,12 +63,7 @@ export async function DELETE(
       );
     }
 
-    await deletePhoto(id);
-    try {
-      await deletePhotoFile(photo.filename);
-    } catch (fileErr) {
-      console.error(`Orphaned file ${photo.filename} (DB record deleted):`, fileErr);
-    }
+    await safeDeletePhoto(id, photo.filename);
 
     return NextResponse.json({ success: true });
   } catch (e) {

@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
   const result = await runCleanup();
   return NextResponse.json({
     deleted: result.deleted.length,
+    orphansRemoved: result.orphansRemoved,
     errors: result.errors.length,
   });
 }

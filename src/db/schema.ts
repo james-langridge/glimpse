@@ -56,7 +56,7 @@ export async function initializeDatabase() {
   await query(`
     CREATE TABLE IF NOT EXISTS link_views (
       id SERIAL PRIMARY KEY,
-      share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE CASCADE,
+      share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE SET NULL,
       viewed_at TIMESTAMPTZ DEFAULT NOW(),
       ip_hash VARCHAR(64),
       country VARCHAR(100),
@@ -114,8 +114,8 @@ export async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS download_tokens (
       id VARCHAR(8) PRIMARY KEY,
       token VARCHAR(64) UNIQUE NOT NULL,
-      share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE CASCADE,
-      photo_id VARCHAR(8) REFERENCES photos(id) ON DELETE CASCADE,
+      share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE SET NULL,
+      photo_id VARCHAR(8) REFERENCES photos(id) ON DELETE SET NULL,
       email VARCHAR(255) NOT NULL,
       ip_hash VARCHAR(64),
       created_at TIMESTAMPTZ DEFAULT NOW(),

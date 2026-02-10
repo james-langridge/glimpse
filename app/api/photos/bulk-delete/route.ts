@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPhotoById, deletePhoto } from "@/src/db/photos";
+import { getPhotoById } from "@/src/db/photos";
 import { getActiveLinksForPhoto } from "@/src/db/links";
-import { deletePhotoFile } from "@/src/lib/storage";
+import { safeDeletePhoto } from "@/src/lib/cleanup";
 
 const MAX_BULK_DELETE = 100;
 
@@ -64,12 +64,7 @@ export async function POST(request: NextRequest) {
     for (const { photo } of results) {
       if (!photo) continue;
       try {
-        await deletePhoto(photo.id);
-        try {
-          await deletePhotoFile(photo.filename);
-        } catch (fileErr) {
-          console.error(`Orphaned file ${photo.filename} (DB record deleted):`, fileErr);
-        }
+        await safeDeletePhoto(photo.id, photo.filename);
         deleted.push(photo.id);
       } catch (e) {
         console.error(`Failed to delete photo ${photo.id}:`, e);

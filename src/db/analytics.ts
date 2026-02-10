@@ -2,7 +2,7 @@ import { query, sql } from "@/src/lib/db";
 
 export interface LinkView {
   id: number;
-  share_link_id: string;
+  share_link_id: string | null;
   viewed_at: Date;
   ip_hash: string | null;
   country: string | null;
@@ -151,7 +151,9 @@ export async function getRecentViews(
   }
   values.push(limit);
   const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-  const result = await query<LinkView & { code: string }>(
+  const result = await query<
+    Omit<LinkView, "share_link_id"> & { share_link_id: string; code: string }
+  >(
     `SELECT lv.*, sl.code
      FROM link_views lv
      JOIN share_links sl ON sl.id = lv.share_link_id
@@ -265,7 +267,9 @@ export async function getRecentViewsForPhoto(
   }
   values.push(limit);
   const where = conditions.join(" AND ");
-  const result = await query<LinkView & { code: string }>(
+  const result = await query<
+    Omit<LinkView, "share_link_id"> & { share_link_id: string; code: string }
+  >(
     `SELECT lv.*, sl.code
      FROM link_views lv
      JOIN share_link_photos slp ON lv.share_link_id = slp.share_link_id

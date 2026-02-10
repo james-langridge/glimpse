@@ -12,32 +12,24 @@ interface CleanupResult {
 
 export async function runCleanup(): Promise<CleanupResult> {
   const cleanupDays = parseInt(await getConfig("CLEANUP_DAYS"), 10);
-  if (cleanupDays === 0) {
-    return { deleted: [], orphansRemoved: 0, errors: [] };
-  }
 
-  const photos = await getPhotosForCleanup();
   const deleted: string[] = [];
   const errors: CleanupResult["errors"] = [];
 
-  for (const photo of photos) {
-    try {
-      await deletePhoto(photo.id);
+  if (cleanupDays > 0) {
+    const photos = await getPhotosForCleanup();
+
+    for (const photo of photos) {
       try {
-        await deletePhotoFile(photo.filename);
-      } catch (fileErr) {
-        console.error(
-          `Orphaned file ${photo.filename} (DB record deleted):`,
-          fileErr,
-        );
+        await safeDeletePhoto(photo.id, photo.filename);
+        deleted.push(photo.id);
+      } catch (e) {
+        errors.push({
+          id: photo.id,
+          filename: photo.filename,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
-      deleted.push(photo.id);
-    } catch (e) {
-      errors.push({
-        id: photo.id,
-        filename: photo.filename,
-        error: e instanceof Error ? e.message : String(e),
-      });
     }
   }
 
@@ -60,6 +52,18 @@ export async function runCleanup(): Promise<CleanupResult> {
   }
 
   return { deleted, orphansRemoved, errors };
+}
+
+export async function safeDeletePhoto(
+  id: string,
+  filename: string,
+): Promise<void> {
+  await deletePhoto(id);
+  try {
+    await deletePhotoFile(filename);
+  } catch (fileErr) {
+    console.error(`Orphaned file ${filename} (DB record deleted):`, fileErr);
+  }
 }
 
 async function sweepOrphanedFiles(): Promise<number> {

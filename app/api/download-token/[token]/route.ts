@@ -63,7 +63,10 @@ export async function GET(
       });
     }
 
-    if (dt.link_revoked || new Date(dt.link_expires_at!) < new Date()) {
+    if (
+      dt.link_revoked ||
+      (dt.link_expires_at && new Date(dt.link_expires_at) < new Date())
+    ) {
       return new NextResponse("The share link is no longer active.", {
         status: 410,
       });
