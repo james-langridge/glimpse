@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { runCleanup } from "@/src/lib/cleanup";
 
 export async function GET(request: NextRequest) {
@@ -7,8 +8,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  const authHeader = request.headers.get("authorization") ?? "";
+  const expected = Buffer.from(`Bearer ${cronSecret}`);
+  const actual = Buffer.from(authHeader);
+  if (
+    expected.length !== actual.length ||
+    !crypto.timingSafeEqual(expected, actual)
+  ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

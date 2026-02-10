@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
-    const key = process.env.SESSION_SECRET!;
+    const key = crypto
+      .createHash("sha256")
+      .update(`password-hmac:${process.env.SESSION_SECRET}`)
+      .digest();
     const hmacExpected = crypto
       .createHmac("sha256", key)
       .update(expected)

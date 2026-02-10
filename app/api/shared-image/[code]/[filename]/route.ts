@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLinkByCode, getLinkStatus, getPhotosForCode } from "@/src/db/links";
 import { readPhoto } from "@/src/lib/storage";
+import { checkRateLimit } from "@/src/lib/rate-limit";
 
 const MIME_TYPES: Record<string, string> = {
   jpg: "image/jpeg",
@@ -16,10 +17,13 @@ function mimeType(filename: string): string {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ code: string; filename: string }> },
 ) {
   try {
+    const rateLimited = checkRateLimit(request, "shared-image", 60, 60_000);
+    if (rateLimited) return rateLimited;
+
     const { code, filename } = await params;
     const upperCode = code.toUpperCase();
 

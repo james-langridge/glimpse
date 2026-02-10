@@ -192,6 +192,8 @@ server {
 
 The `X-Forwarded-For` header is important -- Glimpse uses it for rate limiting and analytics geolocation.
 
+> **Security note:** Glimpse trusts the first IP in the `X-Forwarded-For` header for rate limiting. A reverse proxy that sets this header is required in production -- without one, clients can spoof the header to bypass rate limits. Railway and Vercel set this header automatically. For Docker or manual deployments, always run behind a reverse proxy (Nginx, Caddy, Traefik) that overwrites `X-Forwarded-For` with the real client IP.
+
 ---
 
 ## Technical Overview
