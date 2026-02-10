@@ -381,24 +381,25 @@ export async function embedWatermark(
       break;
   }
 
-  // Verify DCT survived encoding (designed for lossy robustness).
-  // QIM pixel watermark may not survive lossy re-encoding — that's expected
-  // and why we added the DCT layer.
-  const verifyRaw = await sharp(result)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-  const extractedDCT = extractDCTWatermark(
-    verifyRaw.data,
-    verifyRaw.info.width,
-    verifyRaw.info.height,
-    verifyRaw.info.channels,
-    dctSeed,
-  );
-  if (extractedDCT !== downloadId) {
-    throw new Error(
-      `DCT watermark verification failed: expected ${downloadId}, got ${extractedDCT}`,
+  // Verify DCT survived encoding for lossy formats. PNG is lossless so
+  // the watermark is preserved identically — skip the extra decode.
+  if (format !== "png") {
+    const verifyRaw = await sharp(result)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const extractedDCT = extractDCTWatermark(
+      verifyRaw.data,
+      verifyRaw.info.width,
+      verifyRaw.info.height,
+      verifyRaw.info.channels,
+      dctSeed,
     );
+    if (extractedDCT !== downloadId) {
+      throw new Error(
+        `DCT watermark verification failed: expected ${downloadId}, got ${extractedDCT}`,
+      );
+    }
   }
 
   return { buffer: result, contentType };
