@@ -40,6 +40,16 @@ export async function GET(
       return new NextResponse("Download link not found.", { status: 404 });
     }
 
+    if (!dt.filename) {
+      return new NextResponse("The photo has been deleted.", { status: 410 });
+    }
+
+    if (!dt.code) {
+      return new NextResponse("The share link has been deleted.", {
+        status: 410,
+      });
+    }
+
     const consumedAt = dt.consumed_at ? new Date(dt.consumed_at) : null;
     if (consumedAt && Date.now() - consumedAt.getTime() > REUSE_WINDOW_MS) {
       return new NextResponse("This download link has already been used.", {
@@ -53,7 +63,7 @@ export async function GET(
       });
     }
 
-    if (dt.link_revoked || new Date(dt.link_expires_at) < new Date()) {
+    if (dt.link_revoked || new Date(dt.link_expires_at!) < new Date()) {
       return new NextResponse("The share link is no longer active.", {
         status: 410,
       });

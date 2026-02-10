@@ -132,8 +132,20 @@ export async function initializeDatabase() {
     ALTER TABLE photo_downloads ADD COLUMN IF NOT EXISTS download_token_id VARCHAR(8)
   `);
 
-  // Migrate CASCADE to SET NULL so analytics and download records
+  // Migrate CASCADE to SET NULL so tokens, analytics, and download records
   // survive link/photo deletion.
+  await query(`
+    ALTER TABLE download_tokens
+      DROP CONSTRAINT IF EXISTS download_tokens_share_link_id_fkey,
+      ADD CONSTRAINT download_tokens_share_link_id_fkey
+        FOREIGN KEY (share_link_id) REFERENCES share_links(id) ON DELETE SET NULL
+  `);
+  await query(`
+    ALTER TABLE download_tokens
+      DROP CONSTRAINT IF EXISTS download_tokens_photo_id_fkey,
+      ADD CONSTRAINT download_tokens_photo_id_fkey
+        FOREIGN KEY (photo_id) REFERENCES photos(id) ON DELETE SET NULL
+  `);
   await query(`
     ALTER TABLE link_views
       DROP CONSTRAINT IF EXISTS link_views_share_link_id_fkey,

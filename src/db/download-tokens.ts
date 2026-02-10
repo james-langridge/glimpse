@@ -23,19 +23,19 @@ export async function createDownloadToken(params: {
 export interface DownloadToken {
   id: string;
   token: string;
-  share_link_id: string;
-  photo_id: string;
+  share_link_id: string | null;
+  photo_id: string | null;
   email: string;
   ip_hash: string | null;
   created_at: string;
   expires_at: string;
   consumed_at: string | null;
-  filename: string;
+  filename: string | null;
   original_name: string | null;
-  code: string;
-  link_revoked: boolean;
-  link_expires_at: string;
-  allow_downloads: boolean;
+  code: string | null;
+  link_revoked: boolean | null;
+  link_expires_at: string | null;
+  allow_downloads: boolean | null;
   download_id: number | null;
 }
 
@@ -51,8 +51,8 @@ export async function getDownloadToken(
            sl.code, sl.revoked AS link_revoked, sl.expires_at AS link_expires_at, sl.allow_downloads,
            pd.id AS download_id
     FROM download_tokens dt
-    JOIN photos p ON p.id = dt.photo_id
-    JOIN share_links sl ON sl.id = dt.share_link_id
+    LEFT JOIN photos p ON p.id = dt.photo_id
+    LEFT JOIN share_links sl ON sl.id = dt.share_link_id
     LEFT JOIN photo_downloads pd ON pd.download_token_id = dt.id
     WHERE dt.token = ${token}
   `;
