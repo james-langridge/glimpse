@@ -1,10 +1,18 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import sharp from "sharp";
 import { embedWatermark, extractWatermark } from "../watermark";
 
 // These tests need SESSION_SECRET for seed generation
+let originalSecret: string | undefined;
+
 beforeAll(() => {
+  originalSecret = process.env.SESSION_SECRET;
   process.env.SESSION_SECRET = "test-secret-for-watermark-integration-tests";
+});
+
+afterAll(() => {
+  if (originalSecret === undefined) delete process.env.SESSION_SECRET;
+  else process.env.SESSION_SECRET = originalSecret;
 });
 
 async function createImage(
@@ -69,6 +77,8 @@ describe("embedWatermark / extractWatermark integration", () => {
   });
 
   it("extracts via DCT after lossy re-encode destroys QIM", async () => {
+    // Quality 50 is aggressive enough to destroy QIM (DELTA=8) but
+    // DCT_DELTA=36 is strong enough to survive this level of compression.
     // Use a noisy image — solid colors compress too aggressively
     const pixels = Buffer.alloc(200 * 200 * 3);
     for (let i = 0; i < pixels.length; i++) pixels[i] = (i * 37 + 73) & 0xff;

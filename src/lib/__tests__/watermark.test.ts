@@ -14,6 +14,7 @@ const {
   dct2d,
   idct2d,
   prngSequence,
+  prngSequenceV1,
   MAGIC,
   PAYLOAD_BITS,
   DELTA,
@@ -286,13 +287,35 @@ describe("prngSequence", () => {
     expect(result).toHaveLength(120);
     expect(new Set(result).size).toBe(120);
     // Must be a permutation of 0..119
-    expect(result.sort((a, b) => a - b)).toEqual(
+    expect([...result].sort((a, b) => a - b)).toEqual(
       Array.from({ length: 120 }, (_, i) => i),
     );
   });
 
   it("throws when max < count", () => {
     expect(() => prngSequence("seed", 120, 119)).toThrow("Image too small");
+  });
+});
+
+// --- prngSequenceV1 ---
+
+describe("prngSequenceV1", () => {
+  it("returns correct count with unique values", () => {
+    const result = prngSequenceV1("seed", 120, 10000);
+    expect(result).toHaveLength(120);
+    expect(new Set(result).size).toBe(120);
+  });
+
+  it("is deterministic", () => {
+    const a = prngSequenceV1("test-seed", 120, 10000);
+    const b = prngSequenceV1("test-seed", 120, 10000);
+    expect(a).toEqual(b);
+  });
+
+  it("produces different sequences than V2", () => {
+    const v1 = prngSequenceV1("seed", 120, 10000);
+    const v2 = prngSequence("seed", 120, 10000);
+    expect(v1).not.toEqual(v2);
   });
 });
 

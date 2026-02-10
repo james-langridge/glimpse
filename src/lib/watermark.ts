@@ -75,8 +75,27 @@ function prngSequence(seed: string, count: number, max: number): number[] {
       }
     }
   }
+  Object.freeze(indices);
   if (prngCache.size >= PRNG_CACHE_MAX) prngCache.delete(prngCache.keys().next().value!);
   prngCache.set(key, indices);
+  return indices;
+}
+
+// V1 PRNG: single index per SHA256 hash (used before multi-index optimization).
+// Kept as extraction fallback for images watermarked before the V2 change.
+function prngSequenceV1(seed: string, count: number, max: number): number[] {
+  if (max < count) throw new Error(`Image too small: need ${count} pixels, have ${max}`);
+  const indices: number[] = [];
+  const used = new Set<number>();
+  let hash = seed;
+  while (indices.length < count) {
+    hash = createHash("sha256").update(hash).digest("hex");
+    const value = parseInt(hash.slice(0, 8), 16) % max;
+    if (!used.has(value)) {
+      used.add(value);
+      indices.push(value);
+    }
+  }
   return indices;
 }
 
@@ -101,17 +120,20 @@ function embedPixelWatermark(
   }
 }
 
+type PrngFn = (seed: string, count: number, max: number) => number[];
+
 function extractPixelWatermark(
   pixels: Buffer,
   width: number,
   height: number,
   channels: number,
   seed: string,
+  prngFn: PrngFn = prngSequence,
 ): number | null {
   const totalPixels = width * height;
   if (totalPixels < PIXELS_NEEDED) return null;
 
-  const indices = prngSequence(seed, PIXELS_NEEDED, totalPixels);
+  const indices = prngFn(seed, PIXELS_NEEDED, totalPixels);
   const votes = new Array(PAYLOAD_BITS).fill(0);
 
   for (let copy = 0; copy < REDUNDANCY; copy++) {
@@ -278,13 +300,14 @@ function extractDCTWatermark(
   height: number,
   channels: number,
   seed: string,
+  prngFn: PrngFn = prngSequence,
 ): number | null {
   const blocksX = Math.floor(width / BLOCK_SIZE);
   const blocksY = Math.floor(height / BLOCK_SIZE);
   const totalBlocks = blocksX * blocksY;
   if (totalBlocks < BLOCKS_NEEDED) return null;
 
-  const blockIndices = prngSequence(seed, BLOCKS_NEEDED, totalBlocks);
+  const blockIndices = prngFn(seed, BLOCKS_NEEDED, totalBlocks);
   const votes = new Array(PAYLOAD_BITS).fill(0);
 
   for (let copy = 0; copy < REDUNDANCY; copy++) {
@@ -431,30 +454,28 @@ export async function extractWatermark(
     .raw()
     .toBuffer({ resolveWithObject: true });
 
-  // Try QIM pixel extraction
   const seed = getSeed();
-  const pixelId = extractPixelWatermark(
-    data,
-    info.width,
-    info.height,
-    info.channels,
-    seed,
-  );
+  const dctSeed = getDCTSeed();
+  const { width, height, channels } = info;
+
+  // Try current (V2) PRNG sequences first
+  const pixelId = extractPixelWatermark(data, width, height, channels, seed);
   if (pixelId !== null) {
     return { downloadId: pixelId, source: "pixel" };
   }
-
-  // Fall back to DCT extraction
-  const dctSeed = getDCTSeed();
-  const dctId = extractDCTWatermark(
-    data,
-    info.width,
-    info.height,
-    info.channels,
-    dctSeed,
-  );
+  const dctId = extractDCTWatermark(data, width, height, channels, dctSeed);
   if (dctId !== null) {
     return { downloadId: dctId, source: "dct" };
+  }
+
+  // Fall back to V1 PRNG for images watermarked before multi-index change
+  const pixelIdV1 = extractPixelWatermark(data, width, height, channels, seed, prngSequenceV1);
+  if (pixelIdV1 !== null) {
+    return { downloadId: pixelIdV1, source: "pixel" };
+  }
+  const dctIdV1 = extractDCTWatermark(data, width, height, channels, dctSeed, prngSequenceV1);
+  if (dctIdV1 !== null) {
+    return { downloadId: dctIdV1, source: "dct" };
   }
 
   return null;
@@ -473,6 +494,7 @@ export const _test = {
   dct2d,
   idct2d,
   prngSequence,
+  prngSequenceV1,
   MAGIC,
   PAYLOAD_BITS,
   DELTA,
