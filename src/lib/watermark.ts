@@ -459,3 +459,22 @@ export async function extractWatermark(
 
   return null;
 }
+
+// Exported for unit testing — not part of public API
+export const _test = {
+  buildPayload,
+  parsePayload,
+  encodeQIM,
+  decodeQIM,
+  encodeDCTCoeff,
+  decodeDCTCoeff,
+  dct1d,
+  idct1d,
+  dct2d,
+  idct2d,
+  prngSequence,
+  MAGIC,
+  PAYLOAD_BITS,
+  DELTA,
+  DCT_DELTA,
+};
