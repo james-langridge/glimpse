@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { SessionData, sessionOptions } from "@/src/lib/auth";
+import { SessionData, sessionOptions, getSessionVersion } from "@/src/lib/auth";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -17,14 +17,17 @@ export async function proxy(request: NextRequest) {
     sessionOptions,
   );
 
+  const versionValid =
+    (session.sessionVersion ?? 1) === getSessionVersion();
+
   if (isPublicRedirect) {
-    if (session.isLoggedIn) {
+    if (session.isLoggedIn && versionValid) {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
     return response;
   }
 
-  if (!session.isLoggedIn) {
+  if (!session.isLoggedIn || !versionValid) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

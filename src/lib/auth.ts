@@ -3,6 +3,11 @@ import { cookies } from "next/headers";
 
 export interface SessionData {
   isLoggedIn: boolean;
+  sessionVersion?: number;
+}
+
+export function getSessionVersion(): number {
+  return parseInt(process.env.SESSION_VERSION || "1", 10);
 }
 
 export const sessionOptions: SessionOptions = {

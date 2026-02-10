@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { getSession } from "@/src/lib/auth";
+import { getSession, getSessionVersion } from "@/src/lib/auth";
 import { checkRateLimit } from "@/src/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
 
     const session = await getSession();
     session.isLoggedIn = true;
+    session.sessionVersion = getSessionVersion();
     await session.save();
 
     return NextResponse.json({ success: true });
