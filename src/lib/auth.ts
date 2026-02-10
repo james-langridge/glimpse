@@ -7,7 +7,8 @@ export interface SessionData {
 }
 
 export function getSessionVersion(): number {
-  return parseInt(process.env.SESSION_VERSION || "1", 10);
+  const v = parseInt(process.env.SESSION_VERSION || "1", 10);
+  return Number.isNaN(v) ? 1 : v;
 }
 
 export const sessionOptions: SessionOptions = {

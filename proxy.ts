@@ -28,6 +28,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!session.isLoggedIn || !versionValid) {
+    if (!versionValid) session.destroy();
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
