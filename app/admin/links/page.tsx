@@ -123,6 +123,8 @@ export default function LinksPage() {
         const data = await res.json().catch(() => null);
         alert(data?.error ?? "Failed to delete links. Please try again.");
       }
+    } catch {
+      alert("Failed to delete links. Please try again.");
     } finally {
       setBulkDeleting(false);
     }
@@ -163,6 +165,8 @@ export default function LinksPage() {
         const data = await res.json().catch(() => null);
         alert(data?.error ?? "Failed to revoke links. Please try again.");
       }
+    } catch {
+      alert("Failed to revoke links. Please try again.");
     } finally {
       setBulkRevoking(false);
     }

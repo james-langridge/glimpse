@@ -121,7 +121,7 @@ function PhotosContent() {
           setLastCleanupErrors(data.lastCleanupErrors ?? null);
         }
       })
-      .catch(() => {});
+      .catch(() => console.warn("Failed to load cleanup settings"));
   }, []);
 
   const filtered = filterPhotos(photos, tab);
@@ -210,7 +210,11 @@ function PhotosContent() {
         const deletedSet = new Set(data.deleted);
         setPhotos((prev) => prev.filter((p) => !deletedSet.has(p.id)));
         handleCancelSelection();
+      } else {
+        alert("Failed to delete photos. Please try again.");
       }
+    } catch {
+      alert("Failed to delete photos. Please try again.");
     } finally {
       setBulkDeleting(false);
     }

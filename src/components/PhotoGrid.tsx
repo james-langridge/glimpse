@@ -245,10 +245,14 @@ export default function PhotoGrid({
           method: "DELETE",
         });
         if (forceRes.ok) onDelete(id);
+        else alert("Failed to delete photo");
         return;
       }
 
       if (res.ok) onDelete(id);
+      else alert("Failed to delete photo");
+    } catch {
+      alert("Failed to delete photo. Please try again.");
     } finally {
       setDeleting(null);
     }

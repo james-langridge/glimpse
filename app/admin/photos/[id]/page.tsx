@@ -117,10 +117,14 @@ export default function PhotoDetailPage() {
           method: "DELETE",
         });
         if (forceRes.ok) router.push("/admin/photos");
+        else alert("Failed to delete photo");
         return;
       }
 
       if (res.ok) router.push("/admin/photos");
+      else alert("Failed to delete photo");
+    } catch {
+      alert("Failed to delete photo. Please try again.");
     } finally {
       setDeleting(false);
     }
