@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 interface Photo {
   id: string;
@@ -23,9 +23,7 @@ export default function PhotoSelector({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const fetchPhotos = useCallback(() => {
-    setError(false);
-    setLoading(true);
+  useEffect(() => {
     fetch("/api/photos")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load");
@@ -36,9 +34,18 @@ export default function PhotoSelector({
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    fetchPhotos();
-  }, [fetchPhotos]);
+  function fetchPhotos() {
+    setError(false);
+    setLoading(true);
+    fetch("/api/photos")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load");
+        return res.json();
+      })
+      .then((data) => setPhotos(data.photos))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }
 
   function togglePhoto(id: string) {
     if (selected.includes(id)) {

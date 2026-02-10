@@ -7,6 +7,7 @@ import { insertView } from "@/src/db/analytics";
 import { hashIP, isBot, parseGeo, parseUserAgent } from "@/src/lib/analytics";
 import { getConfig } from "@/src/lib/config";
 import { getSession } from "@/src/lib/auth";
+import Link from "next/link";
 import ShareGallery from "@/src/components/ShareGallery";
 import DurationTracker from "@/src/components/DurationTracker";
 import Footer from "@/src/components/Footer";
@@ -106,12 +107,12 @@ export default async function SharePage({ params, searchParams }: Props) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-4 text-center">
-          <a
+          <Link
             href="/"
             className="text-sm font-medium tracking-[0.3em] text-zinc-400 transition-colors hover:text-zinc-300"
           >
             GLIMPSE
-          </a>
+          </Link>
           <p className="text-zinc-400">
             {status === "expired"
               ? "This link has expired"
@@ -141,12 +142,12 @@ export default async function SharePage({ params, searchParams }: Props) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-4 text-center">
-          <a
+          <Link
             href="/"
             className="text-sm font-medium tracking-[0.3em] text-zinc-400 transition-colors hover:text-zinc-300"
           >
             GLIMPSE
-          </a>
+          </Link>
           <p className="text-zinc-400">No photos found</p>
         </div>
       </div>
@@ -161,12 +162,12 @@ export default async function SharePage({ params, searchParams }: Props) {
         </div>
       )}
       <div className="px-4 pt-8 text-center">
-        <a
+        <Link
           href="/"
           className="text-sm font-medium tracking-[0.3em] text-zinc-400 transition-colors hover:text-zinc-300"
         >
           GLIMPSE
-        </a>
+        </Link>
       </div>
       {link.title && (
         <h1 className="px-4 pt-4 text-center text-2xl font-light tracking-widest text-white">

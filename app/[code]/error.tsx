@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function ShareError({
   error,
   reset,
@@ -21,12 +23,12 @@ export default function ShareError({
           >
             Try again
           </button>
-          <a
+          <Link
             href="/"
             className="text-sm text-zinc-500 transition hover:text-zinc-300"
           >
             Go home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

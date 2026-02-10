@@ -7,10 +7,12 @@ interface DurationTrackerProps {
 }
 
 export default function DurationTracker({ viewId }: DurationTrackerProps) {
-  const startTime = useRef(Date.now());
+  const startTime = useRef(0);
   const lastSent = useRef(0);
 
   useEffect(() => {
+    startTime.current = Date.now();
+
     function sendDuration() {
       const durationMs = Date.now() - startTime.current;
       if (durationMs < 1000 || durationMs === lastSent.current) return;

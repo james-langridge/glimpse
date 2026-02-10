@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useSyncExternalStore } from "react";
 
 interface LinkItem {
   id: string;
@@ -91,12 +91,14 @@ function OpenButton({ code }: { code: string }) {
   );
 }
 
-function ShareButton({ code, title }: { code: string; title: string | null }) {
-  const [canShare, setCanShare] = useState(false);
+const noop = () => () => {};
 
-  useEffect(() => {
-    setCanShare(typeof navigator.share === "function");
-  }, []);
+function ShareButton({ code, title }: { code: string; title: string | null }) {
+  const canShare = useSyncExternalStore(
+    noop,
+    () => typeof navigator.share === "function",
+    () => false,
+  );
 
   if (!canShare) return null;
 
