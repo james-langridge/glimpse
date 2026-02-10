@@ -64,8 +64,12 @@ export async function POST(request: NextRequest) {
     for (const { photo } of results) {
       if (!photo) continue;
       try {
-        await deletePhotoFile(photo.filename);
         await deletePhoto(photo.id);
+        try {
+          await deletePhotoFile(photo.filename);
+        } catch (fileErr) {
+          console.error(`Orphaned file ${photo.filename} (DB record deleted):`, fileErr);
+        }
         deleted.push(photo.id);
       } catch (e) {
         console.error(`Failed to delete photo ${photo.id}:`, e);

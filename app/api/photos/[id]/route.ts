@@ -67,8 +67,12 @@ export async function DELETE(
       );
     }
 
-    await deletePhotoFile(photo.filename);
     await deletePhoto(id);
+    try {
+      await deletePhotoFile(photo.filename);
+    } catch (fileErr) {
+      console.error(`Orphaned file ${photo.filename} (DB record deleted):`, fileErr);
+    }
 
     return NextResponse.json({ success: true });
   } catch (e) {

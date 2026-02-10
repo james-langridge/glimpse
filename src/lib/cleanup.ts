@@ -21,8 +21,15 @@ export async function runCleanup(): Promise<CleanupResult> {
 
   for (const photo of photos) {
     try {
-      await deletePhotoFile(photo.filename);
       await deletePhoto(photo.id);
+      try {
+        await deletePhotoFile(photo.filename);
+      } catch (fileErr) {
+        console.error(
+          `Orphaned file ${photo.filename} (DB record deleted):`,
+          fileErr,
+        );
+      }
       deleted.push(photo.id);
     } catch (e) {
       errors.push({
