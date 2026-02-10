@@ -20,7 +20,12 @@ export async function savePhoto(
 }
 
 export async function deletePhotoFile(filename: string): Promise<void> {
-  await del(filename);
+  try {
+    await del(filename);
+  } catch (e) {
+    if (e instanceof BlobNotFoundError) return;
+    throw e;
+  }
 }
 
 export async function readPhoto(filename: string): Promise<Buffer> {
