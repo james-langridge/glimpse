@@ -53,8 +53,14 @@ function decodeQIM(value: number): number {
   return remainder >= 2 && remainder <= 5 ? 1 : 0;
 }
 
+const PRNG_CACHE_MAX = 100;
+const prngCache = new Map<string, number[]>();
+
 // count must be << max for efficient sampling; callers verify min image size
 function prngSequence(seed: string, count: number, max: number): number[] {
+  const key = `${seed}:${count}:${max}`;
+  const cached = prngCache.get(key);
+  if (cached) return cached;
   if (max < count) throw new Error(`Image too small: need ${count} pixels, have ${max}`);
   const indices: number[] = [];
   const used = new Set<number>();
@@ -69,6 +75,8 @@ function prngSequence(seed: string, count: number, max: number): number[] {
       }
     }
   }
+  if (prngCache.size >= PRNG_CACHE_MAX) prngCache.delete(prngCache.keys().next().value!);
+  prngCache.set(key, indices);
   return indices;
 }
 
