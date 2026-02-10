@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import fc from "fast-check";
 import { _test } from "../watermark";
 
 const {
@@ -292,5 +293,33 @@ describe("prngSequence", () => {
 
   it("throws when max < count", () => {
     expect(() => prngSequence("seed", 120, 119)).toThrow("Image too small");
+  });
+});
+
+// --- Property-based tests ---
+
+describe("property-based tests", () => {
+  it("payload roundtrips for any valid uint32 ID", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 0xffffffff }), (id) => {
+        const bits = buildPayload(id);
+        const { magic, downloadId } = parsePayload(bits);
+        return magic === MAGIC && downloadId === id;
+      }),
+      { numRuns: 1000 },
+    );
+  });
+
+  it("DCT coefficient roundtrips for any float value and bit", () => {
+    fc.assert(
+      fc.property(
+        fc.double({ min: -500, max: 500, noNaN: true }),
+        fc.integer({ min: 0, max: 1 }),
+        (value, bit) => {
+          return decodeDCTCoeff(encodeDCTCoeff(value, bit)) === bit;
+        },
+      ),
+      { numRuns: 1000 },
+    );
   });
 });
