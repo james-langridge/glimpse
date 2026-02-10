@@ -64,6 +64,7 @@ export default function LinkDetailPage() {
 
   const fetchLink = useCallback(async () => {
     setError(false);
+    setLoading(true);
     try {
       const res = await fetch(`/api/links/${id}`);
       if (res.ok) {

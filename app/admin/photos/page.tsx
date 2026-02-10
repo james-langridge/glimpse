@@ -83,6 +83,7 @@ function PhotosContent() {
 
   const fetchPhotos = useCallback(async () => {
     setError(false);
+    setLoading(true);
     try {
       const res = await fetch("/api/photos");
       if (res.ok) {

@@ -37,6 +37,7 @@ export default function LinksPage() {
 
   const fetchLinks = useCallback(async () => {
     setError(false);
+    setLoading(true);
     try {
       const res = await fetch("/api/links");
       if (res.ok) {

@@ -73,6 +73,7 @@ export default function PhotoDetailPage() {
 
   const fetchPhoto = useCallback(async () => {
     setError(false);
+    setLoading(true);
     try {
       const res = await fetch(`/api/photos/${id}/detail`);
       if (res.ok) {

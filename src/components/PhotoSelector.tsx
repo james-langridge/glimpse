@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface Photo {
   id: string;
@@ -23,7 +23,9 @@ export default function PhotoSelector({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const fetchPhotos = useCallback(() => {
+    setError(false);
+    setLoading(true);
     fetch("/api/photos")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load");
@@ -33,6 +35,10 @@ export default function PhotoSelector({
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchPhotos();
+  }, [fetchPhotos]);
 
   function togglePhoto(id: string) {
     if (selected.includes(id)) {
@@ -51,7 +57,13 @@ export default function PhotoSelector({
   if (error) {
     return (
       <div className="rounded-lg border border-dashed border-red-800 py-8 text-center text-red-400">
-        Failed to load photos. Please refresh and try again.
+        <p>Failed to load photos.</p>
+        <button
+          onClick={fetchPhotos}
+          className="mt-2 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition hover:bg-zinc-600"
+        >
+          Retry
+        </button>
       </div>
     );
   }
