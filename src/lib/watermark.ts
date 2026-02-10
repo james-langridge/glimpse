@@ -41,7 +41,8 @@ function parsePayload(bits: number[]): { magic: number; downloadId: number } {
 }
 
 function encodeQIM(value: number, bit: number): number {
-  const base = Math.round(value / DELTA) * DELTA;
+  const maxBase = DELTA * Math.floor(255 / DELTA);
+  const base = Math.min(Math.round(value / DELTA) * DELTA, maxBase);
   const target = bit === 1 ? base + DELTA / 2 : base;
   return Math.max(0, Math.min(255, target));
 }
