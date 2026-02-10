@@ -1,4 +1,4 @@
-import { put, head, del, BlobNotFoundError } from "@vercel/blob";
+import { put, head, del, list, BlobNotFoundError } from "@vercel/blob";
 
 export async function ensureStorageDir(): Promise<void> {
   // No-op for blob storage
@@ -35,6 +35,19 @@ export async function readPhoto(filename: string): Promise<Buffer> {
     throw new Error(`Failed to fetch blob ${filename}: ${response.status}`);
   }
   return Buffer.from(await response.arrayBuffer());
+}
+
+export async function listFiles(): Promise<string[]> {
+  const filenames: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const result = await list({ cursor });
+    for (const blob of result.blobs) {
+      filenames.push(blob.pathname);
+    }
+    cursor = result.hasMore ? result.cursor : undefined;
+  } while (cursor);
+  return filenames;
 }
 
 export async function statPhoto(

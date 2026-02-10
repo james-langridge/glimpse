@@ -1,4 +1,4 @@
-import { mkdir, writeFile, unlink, readFile, stat } from "fs/promises";
+import { mkdir, writeFile, unlink, readFile, stat, readdir } from "fs/promises";
 import { join } from "path";
 
 const STORAGE_PATH = process.env.PHOTO_STORAGE_PATH ?? "/data/photos";
@@ -36,4 +36,13 @@ export async function statPhoto(
 ): Promise<{ size: number; modified: Date }> {
   const s = await stat(photoPath(filename));
   return { size: s.size, modified: s.mtime };
+}
+
+export async function listFiles(): Promise<string[]> {
+  try {
+    return await readdir(STORAGE_PATH);
+  } catch (e: unknown) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw e;
+  }
 }

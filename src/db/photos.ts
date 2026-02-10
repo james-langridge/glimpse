@@ -154,6 +154,13 @@ export async function getViewCountForPhoto(photoId: string) {
   };
 }
 
+export async function getAllFilenames(): Promise<Set<string>> {
+  const result = await sql<{ filename: string }>`
+    SELECT filename FROM photos
+  `;
+  return new Set(result.rows.map((r) => r.filename));
+}
+
 export async function getPhotoCount() {
   const result = await sql<{ count: string }>`
     SELECT COUNT(*) as count FROM photos

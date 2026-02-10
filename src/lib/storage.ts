@@ -4,6 +4,7 @@ interface StorageBackend {
   deletePhotoFile(filename: string): Promise<void>;
   readPhoto(filename: string): Promise<Buffer>;
   statPhoto(filename: string): Promise<{ size: number; modified: Date }>;
+  listFiles(): Promise<string[]>;
 }
 
 const useBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -46,4 +47,9 @@ export async function statPhoto(
 ): Promise<{ size: number; modified: Date }> {
   const backend = await getBackend();
   return backend.statPhoto(filename);
+}
+
+export async function listFiles(): Promise<string[]> {
+  const backend = await getBackend();
+  return backend.listFiles();
 }
