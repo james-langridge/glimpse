@@ -28,6 +28,7 @@ const tabs: { key: Status | "all"; label: string }[] = [
 export default function LinksPage() {
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [tab, setTab] = useState<Status | "all">("all");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -35,12 +36,17 @@ export default function LinksPage() {
   const [bulkRevoking, setBulkRevoking] = useState(false);
 
   const fetchLinks = useCallback(async () => {
+    setError(false);
     try {
       const res = await fetch("/api/links");
       if (res.ok) {
         const data = await res.json();
         setLinks(data.links);
+      } else {
+        setError(true);
       }
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -264,7 +270,17 @@ export default function LinksPage() {
           )}
         </div>
 
-        {loading ? (
+        {error ? (
+          <div className="py-16 text-center">
+            <p className="text-zinc-400">Failed to load links</p>
+            <button
+              onClick={fetchLinks}
+              className="mt-3 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition hover:bg-zinc-600"
+            >
+              Retry
+            </button>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-16">
             <Spinner />
           </div>

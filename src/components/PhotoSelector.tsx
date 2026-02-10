@@ -21,11 +21,16 @@ export default function PhotoSelector({
 }: PhotoSelectorProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetch("/api/photos")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load");
+        return res.json();
+      })
       .then((data) => setPhotos(data.photos))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -40,6 +45,14 @@ export default function PhotoSelector({
   if (loading) {
     return (
       <div className="py-8 text-center text-zinc-500">Loading photos...</div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-dashed border-red-800 py-8 text-center text-red-400">
+        Failed to load photos. Please refresh and try again.
+      </div>
     );
   }
 

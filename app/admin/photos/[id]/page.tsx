@@ -60,6 +60,7 @@ export default function PhotoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [photo, setPhoto] = useState<PhotoDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editingCaption, setEditingCaption] = useState(false);
   const [captionDraft, setCaptionDraft] = useState("");
@@ -71,12 +72,17 @@ export default function PhotoDetailPage() {
   const [savingLinkCaption, setSavingLinkCaption] = useState(false);
 
   const fetchPhoto = useCallback(async () => {
+    setError(false);
     try {
       const res = await fetch(`/api/photos/${id}/detail`);
       if (res.ok) {
         const data = await res.json();
         setPhoto(data);
+      } else if (res.status !== 404) {
+        setError(true);
       }
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -198,6 +204,22 @@ export default function PhotoDetailPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-zinc-400">Failed to load photo details</p>
+          <button
+            onClick={fetchPhoto}
+            className="mt-3 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition hover:bg-zinc-600"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

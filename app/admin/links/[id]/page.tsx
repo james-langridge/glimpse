@@ -48,6 +48,7 @@ export default function LinkDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [link, setLink] = useState<LinkDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -62,13 +63,18 @@ export default function LinkDetailPage() {
   const [togglingDownloads, setTogglingDownloads] = useState(false);
 
   const fetchLink = useCallback(async () => {
+    setError(false);
     try {
       const res = await fetch(`/api/links/${id}`);
       if (res.ok) {
         const data = await res.json();
         setLink(data);
         setSelectedPhotos(data.photos.map((p: Photo) => p.id));
+      } else if (res.status !== 404) {
+        setError(true);
       }
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -89,7 +95,12 @@ export default function LinkDetailPage() {
       if (res.ok) {
         setEditing(false);
         fetchLink();
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error ?? "Failed to save photos");
       }
+    } catch {
+      alert("Failed to save photos. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -103,8 +114,17 @@ export default function LinkDetailPage() {
     )
       return;
 
-    const res = await fetch(`/api/links/${id}/revoke`, { method: "PATCH" });
-    if (res.ok) fetchLink();
+    try {
+      const res = await fetch(`/api/links/${id}/revoke`, { method: "PATCH" });
+      if (res.ok) {
+        fetchLink();
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error ?? "Failed to revoke link");
+      }
+    } catch {
+      alert("Failed to revoke link. Please try again.");
+    }
   }
 
   async function handleDuplicate() {
@@ -115,10 +135,17 @@ export default function LinkDetailPage() {
     )
       return;
 
-    const res = await fetch(`/api/links/${id}/duplicate`, { method: "POST" });
-    if (res.ok) {
-      const data = await res.json();
-      router.push(`/admin/links/${data.id}`);
+    try {
+      const res = await fetch(`/api/links/${id}/duplicate`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/admin/links/${data.id}`);
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error ?? "Failed to duplicate link");
+      }
+    } catch {
+      alert("Failed to duplicate link. Please try again.");
     }
   }
 
@@ -126,8 +153,17 @@ export default function LinkDetailPage() {
     if (!confirm("Delete this link permanently? This cannot be undone."))
       return;
 
-    const res = await fetch(`/api/links/${id}`, { method: "DELETE" });
-    if (res.ok) router.push("/admin/links");
+    try {
+      const res = await fetch(`/api/links/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/admin/links");
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error ?? "Failed to delete link");
+      }
+    } catch {
+      alert("Failed to delete link. Please try again.");
+    }
   }
 
   function copyUrl() {
@@ -188,7 +224,12 @@ export default function LinkDetailPage() {
       if (res.ok) {
         setEditingTitle(false);
         fetchLink();
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error ?? "Failed to save title");
       }
+    } catch {
+      alert("Failed to save title. Please try again.");
     } finally {
       setSavingTitle(false);
     }
@@ -218,6 +259,22 @@ export default function LinkDetailPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-zinc-400">Failed to load link details</p>
+          <button
+            onClick={fetchLink}
+            className="mt-3 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition hover:bg-zinc-600"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

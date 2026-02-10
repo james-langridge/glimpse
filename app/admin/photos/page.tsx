@@ -59,6 +59,7 @@ function PhotosContent() {
   const searchParams = useSearchParams();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [tab, setTab] = useState<PhotoTab>("all");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -81,12 +82,17 @@ function PhotosContent() {
   }
 
   const fetchPhotos = useCallback(async () => {
+    setError(false);
     try {
       const res = await fetch("/api/photos");
       if (res.ok) {
         const data = await res.json();
         setPhotos(data.photos);
+      } else {
+        setError(true);
       }
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -348,7 +354,17 @@ function PhotosContent() {
           )}
         </div>
 
-        {loading ? (
+        {error ? (
+          <div className="py-16 text-center">
+            <p className="text-zinc-400">Failed to load photos</p>
+            <button
+              onClick={fetchPhotos}
+              className="mt-3 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition hover:bg-zinc-600"
+            >
+              Retry
+            </button>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-16">
             <Spinner />
           </div>
