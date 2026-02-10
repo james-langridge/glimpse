@@ -29,7 +29,7 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen bg-zinc-950">
       {/* Mobile header */}
-      <div className="fixed top-0 right-0 left-0 z-40 flex items-center border-b border-zinc-800 bg-zinc-950 px-4 py-3 md:hidden">
+      <div className="fixed top-0 right-0 left-0 z-40 flex items-center border-b border-zinc-800 bg-zinc-950 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 md:hidden">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="mr-3 flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-white"
@@ -72,7 +72,7 @@ export default function AdminLayout({
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="px-5 py-6">
+        <div className="px-5 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-6 md:pt-6">
           <Link
             href="/admin"
             className="text-sm font-light tracking-[0.3em] text-white"
@@ -109,7 +109,7 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto pt-14 md:pt-0">{children}</main>
+      <main className="flex-1 overflow-auto pt-[calc(env(safe-area-inset-top)+3.5rem)] md:pt-0">{children}</main>
     </div>
   );
 }
