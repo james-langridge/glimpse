@@ -23,8 +23,8 @@ export default function PhotoSelector({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/photos")
+  function doFetch() {
+    return fetch("/api/photos")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load");
         return res.json();
@@ -32,19 +32,17 @@ export default function PhotoSelector({
       .then((data) => setPhotos(data.photos))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    doFetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only, doFetch is stable
   }, []);
 
   function fetchPhotos() {
     setError(false);
     setLoading(true);
-    fetch("/api/photos")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load");
-        return res.json();
-      })
-      .then((data) => setPhotos(data.photos))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+    doFetch();
   }
 
   function togglePhoto(id: string) {

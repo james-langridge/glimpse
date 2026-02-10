@@ -91,11 +91,11 @@ function OpenButton({ code }: { code: string }) {
   );
 }
 
-const noop = () => () => {};
+const noopSubscribe = () => () => {};
 
 function ShareButton({ code, title }: { code: string; title: string | null }) {
   const canShare = useSyncExternalStore(
-    noop,
+    noopSubscribe,
     () => typeof navigator.share === "function",
     () => false,
   );
