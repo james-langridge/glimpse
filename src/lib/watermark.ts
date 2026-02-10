@@ -61,10 +61,12 @@ function prngSequence(seed: string, count: number, max: number): number[] {
   let hash = seed;
   while (indices.length < count) {
     hash = createHash("sha256").update(hash).digest("hex");
-    const value = parseInt(hash.slice(0, 8), 16) % max;
-    if (!used.has(value)) {
-      used.add(value);
-      indices.push(value);
+    for (let i = 0; i < 8 && indices.length < count; i++) {
+      const value = parseInt(hash.slice(i * 8, i * 8 + 8), 16) % max;
+      if (!used.has(value)) {
+        used.add(value);
+        indices.push(value);
+      }
     }
   }
   return indices;
