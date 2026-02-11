@@ -40,7 +40,8 @@ export async function statPhoto(
 
 export async function listFiles(): Promise<string[]> {
   try {
-    return await readdir(STORAGE_PATH);
+    const entries = await readdir(STORAGE_PATH, { withFileTypes: true });
+    return entries.filter((e) => e.isFile()).map((e) => e.name);
   } catch (e: unknown) {
     if ((e as NodeJS.ErrnoException).code === "ENOENT") return [];
     throw e;
