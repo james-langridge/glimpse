@@ -43,12 +43,11 @@ export default function About() {
             </li>
             <li>
               <span className="text-zinc-300">You send the link</span> to
-              whoever you want. They get a short URL with a 6-character code.
+              whoever you want. They get a unique link to view them.
             </li>
             <li>
               <span className="text-zinc-300">They view the photos</span> by
-              visiting the link or entering the code on the homepage. No sign-up,
-              no app download, no account needed.
+              visiting the link. No sign-up, no app download, no account needed.
             </li>
             <li>
               <span className="text-zinc-300">The link expires</span> on the
@@ -135,11 +134,10 @@ export default function About() {
               <span className="font-medium text-zinc-300">
                 Links are unguessable.
               </span>{" "}
-              Each share code is 6 characters picked at random from 36 possible
-              characters, giving over 2 billion combinations. Codes are
-              generated using a cryptographic random number generator, and code
-              lookups are rate-limited&mdash;so even an automated attack would
-              take centuries to stumble on a valid link.
+              Each share link uses a cryptographically random 22-character
+              code with over 128 bits of entropy&mdash;the same level of
+              security used by GitHub and other major platforms. Brute-force
+              guessing is computationally infeasible.
             </li>
             <li>
               <span className="font-medium text-zinc-300">

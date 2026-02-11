@@ -1,5 +1,4 @@
 import Link from "next/link";
-import CodeEntry from "@/src/components/CodeEntry";
 import Footer from "@/src/components/Footer";
 
 export default function Home() {
@@ -26,12 +25,17 @@ export default function Home() {
           </svg>
         </Link>
       </div>
-      <main className="flex flex-1 flex-col items-center justify-center gap-8">
+      <main className="flex flex-1 flex-col items-center justify-center gap-6">
         <h1 className="text-4xl font-light tracking-widest text-white">
           GLIMPSE
         </h1>
-        <p className="text-zinc-400">Enter your code to view photos</p>
-        <CodeEntry />
+        <p className="text-zinc-400">Temporary, secure photo sharing.</p>
+        <Link
+          href="/about"
+          className="text-sm text-zinc-600 transition-colors hover:text-zinc-400"
+        >
+          Learn more
+        </Link>
       </main>
       <Footer />
     </div>

@@ -23,14 +23,13 @@ const RESERVED_PATHS = new Set(["admin", "login", "api", "_next"]);
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { code } = await params;
-  const upperCode = code.toUpperCase();
 
   if (RESERVED_PATHS.has(code.toLowerCase())) return {};
 
-  const link = await getLinkByCode(upperCode);
+  const link = await getLinkByCode(code);
   if (!link || getLinkStatus(link) !== "active") return {};
 
-  const photos = await getPhotosForCode(upperCode);
+  const photos = await getPhotosForCode(code);
   if (photos.length === 0) return {};
 
   const displayTimezone = await getConfig("DISPLAY_TIMEZONE");
@@ -89,13 +88,12 @@ async function recordView(linkId: string): Promise<number | null> {
 
 export default async function SharePage({ params, searchParams }: Props) {
   const { code } = await params;
-  const upperCode = code.toUpperCase();
 
   if (RESERVED_PATHS.has(code.toLowerCase())) {
     notFound();
   }
 
-  const link = await getLinkByCode(upperCode);
+  const link = await getLinkByCode(code);
 
   if (!link) {
     notFound();
@@ -134,7 +132,7 @@ export default async function SharePage({ params, searchParams }: Props) {
   }
 
   const [photos, viewId] = await Promise.all([
-    getPhotosForCode(upperCode),
+    getPhotosForCode(code),
     isPreview ? Promise.resolve(null) : recordView(link.id),
   ]);
 
@@ -180,7 +178,7 @@ export default async function SharePage({ params, searchParams }: Props) {
           {photos.length} photos
         </p>
       )}
-      <ShareGallery photos={photos} code={upperCode} allowDownloads={link.allow_downloads} />
+      <ShareGallery photos={photos} code={code} allowDownloads={link.allow_downloads} />
       <Footer />
       {viewId !== null && <DurationTracker viewId={viewId} />}
     </div>

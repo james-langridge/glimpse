@@ -12,8 +12,8 @@ Here's how it works:
 
 1. **You upload photos** to your personal Glimpse server through the admin panel.
 2. **You create a share link** by selecting which photos to include and setting an expiry date (tomorrow, next week, whenever you want).
-3. **You send the link** to whoever you want. They get a short URL with a 6-character code like `N59YCP`.
-4. **They view the photos** by visiting the link or entering the code on the homepage. No sign-up, no app download, no account needed.
+3. **You send the link** to whoever you want. They get a unique, unguessable URL.
+4. **They view the photos** by visiting the link. No sign-up, no app download, no account needed.
 5. **The link expires** on the date you set. After that, the photos are no longer accessible. You can also revoke a link at any time if you change your mind.
 
 That's it. You stay in control of what's shared, who sees it, and for how long.
@@ -23,7 +23,7 @@ That's it. You stay in control of what's shared, who sees it, and for how long.
 Unlike sharing photos through social media, messaging apps, or cloud storage services, Glimpse keeps you in control:
 
 - **Your photos stay on your server.** They aren't uploaded to Google, Apple, Meta, or any third party. They live on a server that you own and control.
-- **Links are unguessable.** Each share code is 6 characters picked at random from 36 possible characters (A–Z, 0–9), giving over 2 billion combinations. Codes are generated using a cryptographic random number generator, and code lookups are rate-limited — so even an automated attack would take centuries to stumble on a valid link.
+- **Links are unguessable.** Each share link uses a cryptographically random 22-character code with over 128 bits of entropy — the same level of security used by GitHub and other major platforms. Brute-force guessing is computationally infeasible.
 - **Links expire automatically.** Every share link has an expiry date. Once it passes, the photos can't be accessed anymore. No "shared with link" that lives forever.
 - **You can revoke access instantly.** Changed your mind? Revoke a link and it stops working immediately.
 - **No viewer accounts.** The people you share with don't need to create accounts, hand over their email address, or download an app. Less data floating around means less risk.
@@ -254,7 +254,6 @@ All foreign keys use `ON DELETE CASCADE`.
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| POST | `/api/lookup/[code]` | Validate a share code |
 | GET | `/api/shared-image/[code]/[filename]` | Serve a photo from an active link |
 | GET | `/api/download/[code]/[filename]` | Download a watermarked photo from an active link |
 | POST | `/api/download-request` | Request a download token via email |

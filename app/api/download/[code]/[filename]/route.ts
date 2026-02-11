@@ -28,9 +28,8 @@ export async function GET(
     if (rateLimited) return rateLimited;
 
     const { code, filename } = await params;
-    const upperCode = code.toUpperCase();
 
-    const link = await getLinkByCode(upperCode);
+    const link = await getLinkByCode(code);
     if (!link || getLinkStatus(link) !== "active") {
       return new NextResponse("Not found", { status: 404 });
     }
@@ -42,7 +41,7 @@ export async function GET(
       );
     }
 
-    const photos = await getPhotosForCode(upperCode);
+    const photos = await getPhotosForCode(code);
     const photo = photos.find((p) => p.filename === filename);
     if (!photo) {
       return new NextResponse("Not found", { status: 404 });

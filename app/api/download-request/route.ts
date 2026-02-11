@@ -45,8 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const upperCode = code.toUpperCase();
-    const link = await getLinkByCode(upperCode);
+    const link = await getLinkByCode(code);
     if (!link || getLinkStatus(link) !== "active") {
       return NextResponse.json(
         { error: "Share link not found or expired" },
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const photos = await getPhotosForCode(upperCode);
+    const photos = await getPhotosForCode(code);
     const photo = photos.find((p) => p.filename === filename);
     if (!photo) {
       return NextResponse.json({ error: "Photo not found" }, { status: 404 });

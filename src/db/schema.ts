@@ -18,7 +18,7 @@ export async function initializeDatabase() {
   await query(`
     CREATE TABLE IF NOT EXISTS share_links (
       id VARCHAR(8) PRIMARY KEY,
-      code VARCHAR(6) UNIQUE NOT NULL,
+      code VARCHAR(32) UNIQUE NOT NULL,
       title VARCHAR(255),
       expires_at TIMESTAMPTZ NOT NULL,
       revoked BOOLEAN DEFAULT FALSE,
