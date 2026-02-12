@@ -33,6 +33,10 @@ export async function initializeDatabase() {
   `);
 
   await query(`
+    ALTER TABLE share_links ALTER COLUMN code TYPE VARCHAR(32)
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS share_link_photos (
       share_link_id VARCHAR(8) REFERENCES share_links(id) ON DELETE CASCADE,
       photo_id VARCHAR(8) REFERENCES photos(id) ON DELETE CASCADE,
@@ -163,5 +167,15 @@ export async function initializeDatabase() {
       DROP CONSTRAINT IF EXISTS photo_downloads_photo_id_fkey,
       ADD CONSTRAINT photo_downloads_photo_id_fkey
         FOREIGN KEY (photo_id) REFERENCES photos(id) ON DELETE SET NULL
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_link_views_link_time
+      ON link_views(share_link_id, viewed_at DESC)
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_link_views_time
+      ON link_views(viewed_at DESC)
   `);
 }

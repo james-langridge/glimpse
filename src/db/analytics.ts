@@ -126,7 +126,11 @@ export async function getOverviewStats(
      WHERE ${where}`,
     values,
   );
-  const row = result.rows[0];
+  const row = result.rows[0] ?? {
+    total_views: "0",
+    unique_visitors: "0",
+    avg_duration_ms: "0",
+  };
   return {
     total_views: parseInt(row.total_views, 10),
     unique_visitors: parseInt(row.unique_visitors, 10),
@@ -190,7 +194,11 @@ export async function getOverviewStatsForPhoto(
      WHERE ${where}`,
     values,
   );
-  const row = result.rows[0];
+  const row = result.rows[0] ?? {
+    total_views: "0",
+    unique_visitors: "0",
+    avg_duration_ms: "0",
+  };
   return {
     total_views: parseInt(row.total_views, 10),
     unique_visitors: parseInt(row.unique_visitors, 10),
